@@ -1,0 +1,29 @@
+# Core Framework
+django>=5.0
+djangorestframework
+django-cors-headers
+python-dotenv
+
+# Database
+psycopg2-binary
+
+# Task Queue & Background Processing
+celery
+redis
+kombu 
+
+# Scraping & Requests
+curl_cffi
+beautifulsoup4
+
+# Payments & Billing
+stripe
+dj-stripe  
+
+# Environment & Utilities
+django-environ
+python-decouple
+requests
+
+# Monitoring & Debugging (Development/Production)
+flower  
