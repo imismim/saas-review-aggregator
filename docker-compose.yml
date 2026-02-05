@@ -1,40 +1,62 @@
+version: '3.8'
+
 services:
- db:
-   image: postgres:15
-   environment:
-     POSTGRES_DB: ${DB_NAME}
-     POSTGRES_USER: ${DB_USER}
-     POSTGRES_PASSWORD: ${DB_PASSWORD}
-   ports:
-     - "5432:5432"
-   volumes:
-     - postgres_data:/var/lib/postgresql/data
-   env_file:
-     - .env
- 
- web:
-   build: .
-   container_name: web-1
-   command: python manage.py runserver 0.0.0.0:8000
-   ports:
-     - "8000:8000"
-   depends_on:
-     - db
-   volumes:
-     - ./src:/app
-     - media_volume:/app/media
-   environment:
-     SECRET_KEY: ${SECRET_KEY}
-     DEBUG: ${DEBUG}
-     DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
-     DB_ENGINE: ${DB_ENGINE}
-     DB_NAME: ${DB_NAME}
-     DB_USER: ${DB_USER}
-     DB_PASSWORD: ${DB_PASSWORD}
-     DB_HOST: ${DB_HOST}
-     DB_PORT: ${DB_PORT}
-   env_file:
-     - .env
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq-1
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672"  
+      - "15672:15672" 
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
+    env_file:
+      - .env
+
+  web:
+    build: .
+    container_name: web-1
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - rabbitmq
+    volumes:
+      - ./src:/app
+      - media_volume:/app/media
+    env_file:
+      - .env
+
+  worker:
+    build: .
+    container_name: worker-1
+    command: celery -A reviewaggregator worker --loglevel=info
+    volumes:
+      - ./src:/app
+      - media_volume:/app/media
+    depends_on:
+      - db
+      - rabbitmq
+    env_file:
+      - .env
+
 volumes:
-   postgres_data:
-   media_volume:
+  postgres_data:
+  rabbitmq_data:
+  media_volume:
