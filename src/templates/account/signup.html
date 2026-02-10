@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load account socialaccount %}
+{% load static %}
 
 {% block title %}{% trans "Create Account - ReviewPulse" %}{% endblock %}
 
@@ -13,6 +14,14 @@
                     <h2 class="fw-bold text-dark">Join ReviewPulse</h2>
                     <p class="text-muted small">Start tracking your restaurant reputation today</p>
                 </div>
+
+                <div class="d-grid gap-2 mb-4">
+                    <a href="{% provider_login_url 'google' %}" class="btn btn-outline-dark btn-lg d-flex align-items-center justify-content-center gap-2 shadow-sm py-2">
+                        <img src="{% static 'google-icon-logo.svg' %}" style="width: 18px;" alt="Google">
+                        <span class="fs-6 fw-semibold">Sign up with Google</span>
+                    </a>
+                </div>
+
                 <div class="d-flex align-items-center my-4">
                     <hr class="flex-grow-1">
                     <span class="mx-3 text-muted small text-uppercase">or use email</span>
