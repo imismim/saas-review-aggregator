@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
 
     # Local apps
-    'scrapers.apps.ScrapersConfig'
+    'scrapers.apps.ScrapersConfig',
+    'users.apps.UsersConfig'
 ]
 
 MIDDLEWARE = [
