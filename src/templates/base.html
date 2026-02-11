@@ -46,9 +46,12 @@
                             {% endif %}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{% url 'account_logout' %}">Logout</a></li>
-                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'profile' %}">Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <form action="{% url 'account_logout' %}" method="post">
+                                {% csrf_token %}
+                                <li><button class="dropdown-item" type="submit">Logout</button></li>
+                            </form>
                         </ul>
                     </li>
                     {% else %}
