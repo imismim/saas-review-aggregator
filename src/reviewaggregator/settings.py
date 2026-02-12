@@ -48,7 +48,8 @@ INSTALLED_APPS = [
 
     # Local apps
     'scrapers.apps.ScrapersConfig',
-    'users.apps.UsersConfig'
+    'users.apps.UsersConfig',
+    'subscriptions.apps.SubscriptionsConfig'
 ]
 
 MIDDLEWARE = [
@@ -83,11 +84,11 @@ TEMPLATES = [
 
 SITE_ID = 1
 
-ACCOUNT_AUTHENTICATION_METHOD = "username"
+ACCOUNT_LOGIN_METHODS = {'username', 'email'}
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
-ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 SOCIALACCOUNT_LOGIN_ON_GET = True
-
+ 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
