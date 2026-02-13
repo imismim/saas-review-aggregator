@@ -22,3 +22,33 @@ def create_customer(name="", email="", metadata={}, raw=False):
     stripe_id = response.get("id")
     return stripe_id
 
+def create_product(name="", metadata={}, raw=False):
+    response = stripe.Product.create(
+        name=name,
+        metadata=metadata
+    )    
+    if raw:
+        return response 
+    stripe_id = response.get("id")
+    return stripe_id
+
+
+
+def create_price(currency="usd",
+    unit_amount=9999,
+    interval="month",
+    metadata={},
+    product_stripe_id=None,
+    raw=False
+    ):
+    response = stripe.Price.create(
+                currency=currency,
+                unit_amount=unit_amount,
+                recurring={"interval": interval},
+                product=product_stripe_id,
+                metadata=metadata
+            ) 
+    if raw:
+        return response 
+    stripe_id = response.get("id")
+    return stripe_id
