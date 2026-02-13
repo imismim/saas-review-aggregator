@@ -21,6 +21,12 @@ class Subscription(models.Model):
 
     stripe_id = models.CharField(max_length=100, null=True, blank=True)
     
+    order = models.IntegerField(default=-1)
+    featured = models.BooleanField(default=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True, editable=False)    
+    
     def __str__(self):
         return self.name
 
@@ -61,8 +67,8 @@ class SubscriptionPrice(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
     
-    class Meta:
-        ordering = ('order','featured','-updated_at')
+    class Meta:  
+        ordering = ('subscription__order', 'order','featured','-updated_at')
         
     @property
     def stripe_curruncy(self):
