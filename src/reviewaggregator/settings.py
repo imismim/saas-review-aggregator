@@ -49,7 +49,8 @@ INSTALLED_APPS = [
     # Local apps
     'scrapers.apps.ScrapersConfig',
     'users.apps.UsersConfig',
-    'subscriptions.apps.SubscriptionsConfig'
+    'subscriptions.apps.SubscriptionsConfig',
+    'customers.apps.CustomersConfig'
 ]
 
 MIDDLEWARE = [
@@ -88,21 +89,21 @@ ACCOUNT_LOGIN_METHODS = {'username', 'email'}
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 SOCIALACCOUNT_LOGIN_ON_GET = True
- 
+
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 SOCIALACCOUNT_PROVIDERS = {}
-   
+
 ALLAUTH_UI_THEME = "light"
 
 WSGI_APPLICATION = 'reviewaggregator.wsgi.application'
 
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
-LOGIN_URL='/accounts/login/'
+LOGIN_URL = '/accounts/login/'
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
@@ -166,7 +167,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATICFILES_DIRS = [
-    BASE_DIR / "static", 
+    BASE_DIR / "static",
 ]
 
 STATIC_URL = '/static/'
@@ -196,3 +197,5 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool)
 EMAIL_USE_SSL = config('EMAIL_USE_SSL', cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default=None)
