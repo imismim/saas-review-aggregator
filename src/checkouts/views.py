@@ -2,13 +2,17 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
+from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 
-from subscriptions.models import SubscriptionPrice
+from subscriptions.models import SubscriptionPrice, Subscription, UserSubscription
 from helpers.billing import (start_checkout_session,
                              get_checkout_session,
-                             get_subscription)
+                             get_subscription,
+                             get_checkout_customer_plan)
 # Create your views here.
+
+User = get_user_model()
 
 def product_price_redirect_view(request, price_id=None, *args, **kwargs):
     request.session['checkout_subscription_price_id'] = price_id
@@ -24,7 +28,7 @@ def checkout_redirect_view(request):
     if subscription_price_id is None or obj is None:
         return redirect('pricing')
 
-    customer_stripe_id = request.user.customer.stripe_customer_id
+    customer_stripe_id = request.user.customer.stripe_id
     successful_url = request.build_absolute_uri(reverse('stripe-checkout-end'))
     cancel_url = request.build_absolute_uri(reverse('pricing'))
 
@@ -40,20 +44,28 @@ def checkout_redirect_view(request):
 
 def checkout_finalize_view(request):
     session_id = request.GET.get("session_id")
-    checkout_response = get_checkout_session(stripe_id=session_id)
-    sub_stripe_id = checkout_response.get("subscription")
-    sub_response = get_subscription(stripe_id=sub_stripe_id)
+    customer_id, plan_id = get_checkout_customer_plan(session_id=session_id)
+    try:
+        sub_obj =  Subscription.objects.get(subscriptionprice__stripe_id=plan_id)
+    except:
+        sub_obj = None
     
-    customer_id = checkout_response.get("customer")
-    
-    sub_plan = sub_response.get("plan", {})
-    subs_plan_stripe_id = sub_plan.get("id")
-    price_qs = SubscriptionPrice.objects.filter(stripe_id=subs_plan_stripe_id)
-    print("price_qs", price_qs)
-    
+    try:
+        user_obj = User.objects.get(customer__stripe_id=customer_id)
+    except:
+        user_obj = None
+        
+    try:
+        user_sub_obj, created = UserSubscription.objects.get_or_create(user=user_obj, 
+                                                                       defaults={'subscription': sub_obj})
+    except:
+        user_sub_obj = None
+        
+    if None in [sub_obj, user_obj, user_sub_obj]:
+        return HttpResponse("Something went wrong while processing your subscription. Please contact support.")
+         
     context = {
-        "checkout ": checkout_response,
-        "subscription": sub_response
+ 
     }
  
     return render(request, 'checkouts/success.html', context=context)

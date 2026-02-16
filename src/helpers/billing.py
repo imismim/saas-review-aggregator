@@ -87,5 +87,5 @@ def get_checkout_customer_plan(session_id=""):
     sub_stripe_id = checkout_response.get("subscription")
     sub_response = get_subscription(stripe_id=sub_stripe_id)
     sub_plan = sub_response.get("plan", {})
-    
-    return customer_id, sub_plan
+    plan_id = sub_plan.get("id")
+    return customer_id, plan_id
