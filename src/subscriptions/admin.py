@@ -1,4 +1,7 @@
 from django.contrib import admin
+from django.urls import reverse
+from django.utils.safestring import mark_safe
+
 from .models import Subscription, UserSubscription, SubscriptionPrice
 # Register your models here.
 
@@ -19,13 +22,37 @@ class SubscriptionPriceInline(admin.TabularInline):
         
         formset.form = SubscriptionPriceForm
         return formset
-    
+  
+@admin.register(Subscription)  
 class SubscriptionAdmin(admin.ModelAdmin):
-    list_display = ('name', 'active')
+    list_display = ('name', 'active', 'order', 'count_prices')
     inlines = [SubscriptionPriceInline]
     readonly_fields = ('stripe_id',)
     
-
-admin.site.register(Subscription, SubscriptionAdmin)
-
-admin.site.register(UserSubscription, list_display=('user', 'subscription', 'active', 'created_at', 'updated_at'))
+    def count_prices(self, obj):
+        if obj.subscriptionprice_set.exists():
+            return obj.subscriptionprice_set.count()
+        return 0
+    
+    
+    count_prices.short_description = 'Number of Prices'
+@admin.register(UserSubscription)
+class UserSubscriptionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'view_user_link','view_subscription_link', 'active', 'created_at', 'updated_at')
+    list_filter = ('active', 'created_at', 'updated_at')
+    search_fields = ('user__username', 'subscription__name')
+    
+    def view_user_link(self, obj):
+        if obj.user:
+            url = reverse("admin:auth_user_change", args=[obj.user.id])
+            return mark_safe(f'<a href="{url}">{obj.user}</a>')
+        return "-"
+    
+    def view_subscription_link(self, obj):
+        if obj.subscription:
+            url = reverse("admin:subscriptions_subscription_change", args=[obj.subscription.id])
+            return mark_safe(f'<a href="{url}">{obj.subscription}</a>')
+        return "-"
+    
+    view_user_link.short_description = 'User Profile'
+    view_subscription_link.short_description = 'Subscription'
