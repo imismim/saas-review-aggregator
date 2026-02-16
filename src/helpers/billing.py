@@ -66,3 +66,15 @@ def start_checkout_session(customer_id="", successful_url="", cancel_url="", pri
     if raw: 
         return response
     return response.get("url")
+
+def get_checkout_session(stripe_id="", raw=True):
+    response = stripe.checkout.Session.retrieve(stripe_id)
+    if raw:
+        return response
+    return response.get("url")
+
+def get_subscription(stripe_id="", raw=True):
+    response = stripe.Subscription.retrieve(stripe_id)
+    if raw:
+        return response
+    return response.get("status")

@@ -5,7 +5,9 @@ from django.shortcuts import redirect
 from django.http import HttpResponse
 
 from subscriptions.models import SubscriptionPrice
-from helpers.billing import start_checkout_session
+from helpers.billing import (start_checkout_session,
+                             get_checkout_session,
+                             get_subscription)
 # Create your views here.
 
 def product_price_redirect_view(request, price_id=None, *args, **kwargs):
@@ -34,6 +36,24 @@ def checkout_redirect_view(request):
         raw=False
     )
     return redirect(url)
-      
+
+
 def checkout_finalize_view(request):
-    return HttpResponse("Checkout finalized. Implement webhook to handle post-checkout actions.", status=200)
+    session_id = request.GET.get("session_id")
+    checkout_response = get_checkout_session(stripe_id=session_id)
+    sub_stripe_id = checkout_response.get("subscription")
+    sub_response = get_subscription(stripe_id=sub_stripe_id)
+    
+    customer_id = checkout_response.get("customer")
+    
+    sub_plan = sub_response.get("plan", {})
+    subs_plan_stripe_id = sub_plan.get("id")
+    price_qs = SubscriptionPrice.objects.filter(stripe_id=subs_plan_stripe_id)
+    print("price_qs", price_qs)
+    
+    context = {
+        "checkout ": checkout_response,
+        "subscription": sub_response
+    }
+ 
+    return render(request, 'checkouts/success.html', context=context)
