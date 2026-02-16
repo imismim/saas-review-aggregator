@@ -18,6 +18,7 @@ class Subscription(models.Model):
     groups = models.ManyToManyField(Group)
     permissions = models.ManyToManyField(Permission, limit_choices_to={'content_type__app_label': 'subscriptions', 
                                                                     'codename__in': [level[0] for level in SUBSCRIPTION_LEVELS]})
+    features = models.TextField(help_text="Newline-separated list of features", blank=True, null=True)
 
     stripe_id = models.CharField(max_length=100, null=True, blank=True)
     
@@ -34,6 +35,11 @@ class Subscription(models.Model):
         verbose_name = 'Subscription'
         verbose_name_plural = 'Subscriptions'
         permissions = SUBSCRIPTION_LEVELS
+    
+    def get_features_list(self):
+        if self.features:
+            return [feature.strip() for feature in self.features.splitlines()]
+        return [] 
 
     def save(self, *args, **kwargs):
         if not self.stripe_id:
@@ -75,9 +81,19 @@ class SubscriptionPrice(models.Model):
         return "usd"
 
     @property
+    def display_subscribtion_name(self):
+        if self.subscription:
+            return self.subscription.name
+        return "Plan"
+    
+    @property
     def stripe_price(self):
         return int(self.price * 100)
-           
+    
+    @property
+    def display_subscribtion_features(self):
+        return self.subscription.get_features_list() if self.subscription else []
+        
     @property
     def product_stripe_id(self):
         if not self.subscription:

@@ -9,10 +9,10 @@ class SubscriptionPricingView(View):
 
     def get(self,request,  *args, **kwargs):
         qs = SubscriptionPrice.objects.filter(featured=True)
-        mounthly_qs = qs.filter(interval=SubscriptionPrice.IntervalChoices.MONTHLY)
+        monthly_qs = qs.filter(interval=SubscriptionPrice.IntervalChoices.MONTHLY)
         yearly_qs = qs.filter(interval=SubscriptionPrice.IntervalChoices.YEARLY)
         context = {
-            'mounthly_qs': mounthly_qs,
+            'monthly_qs': monthly_qs,
             'yearly_qs': yearly_qs
             
         }
