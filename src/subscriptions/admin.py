@@ -8,6 +8,18 @@ class SubscriptionPriceInline(admin.TabularInline):
     readonly_fields = ('stripe_id',)
     can_delete = False
 
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        class SubscriptionPriceForm(formset.form):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                if self.instance and self.instance.pk:
+                    self.fields['interval'].disabled = True
+                    self.fields['price'].disabled = True
+        
+        formset.form = SubscriptionPriceForm
+        return formset
+    
 class SubscriptionAdmin(admin.ModelAdmin):
     list_display = ('name', 'active')
     inlines = [SubscriptionPriceInline]
