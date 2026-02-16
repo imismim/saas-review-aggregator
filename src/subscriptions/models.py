@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import Group, Permission
 from django.conf import settings
+from django.urls import reverse
 
 from helpers.billing import create_product, create_price
 # Create your models here.
@@ -99,7 +100,10 @@ class SubscriptionPrice(models.Model):
         if not self.subscription:
             return None
         return self.subscription.stripe_id
-
+    
+    def get_checkout_url(self):
+        return reverse('sub-price-checkout', kwargs={'price_id': self.id})
+    
     def save(self, *args, **kwargs):
         if not self.stripe_id and self.product_stripe_id is not None:
             stripe_id = create_price(

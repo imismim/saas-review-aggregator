@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     'scrapers.apps.ScrapersConfig',
     'users.apps.UsersConfig',
     'subscriptions.apps.SubscriptionsConfig',
-    'customers.apps.CustomersConfig'
+    'customers.apps.CustomersConfig',
+    'checkouts.apps.CheckoutsConfig',
 ]
 
 MIDDLEWARE = [
