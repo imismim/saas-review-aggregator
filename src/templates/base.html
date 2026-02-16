@@ -29,7 +29,9 @@
             <div class="collapse navbar-collapse" id="navbarNav">
 
                 <ul class="navbar-nav ms-auto align-items-center">
-
+                    <li class="nav-item dropdown">
+                        <a class="nav-link" href="{% url 'pricing' %}" id="pricingDrop" role="button">Pricing</a>
+                    </li>
                     {% if user.is_authenticated %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-menu-end d-flex align-items-center gap-2" href="#" id="userDrop"
