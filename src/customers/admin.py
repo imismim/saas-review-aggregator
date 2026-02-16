@@ -4,4 +4,4 @@ from django.contrib import admin
 
 from .models import Customer
 
-admin.site.register(Customer, list_display=["user", "stripe_customer_id", "init_email", "init_email_confirmed"])
+admin.site.register(Customer, list_display=["user", "stripe_id", "init_email", "init_email_confirmed"])
