@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.urls import reverse
 from django.views import View
 
 from .models import SubscriptionPrice 
@@ -6,15 +7,25 @@ from .models import SubscriptionPrice
 
 
 class SubscriptionPricingView(View):
+    INT_MAP = {
+        'monthly': SubscriptionPrice.IntervalChoices.MONTHLY,
+        'yearly': SubscriptionPrice.IntervalChoices.YEARLY
+    }
+    def get(self,request, interval=None):
+        qs = SubscriptionPrice.objects.filter(featured=True)        
+        object_qs = qs.filter(interval=self.INT_MAP['monthly'])
 
-    def get(self,request,  *args, **kwargs):
-        qs = SubscriptionPrice.objects.filter(featured=True)
-        monthly_qs = qs.filter(interval=SubscriptionPrice.IntervalChoices.MONTHLY)
-        yearly_qs = qs.filter(interval=SubscriptionPrice.IntervalChoices.YEARLY)
+        monthly_url = reverse('pricing-interval', kwargs={'interval': self.INT_MAP['monthly']})
+        yearly_url = reverse('pricing-interval', kwargs={'interval': self.INT_MAP['yearly']})
+        active = self.INT_MAP['monthly']
+        if interval == self.INT_MAP['yearly']:
+            active = self.INT_MAP['yearly']
+            object_qs = qs.filter(interval=self.INT_MAP['yearly'])
         context = {
-            'monthly_qs': monthly_qs,
-            'yearly_qs': yearly_qs
-            
+            'object_qs': object_qs,
+            'monthly_url': monthly_url,
+            'yearly_url': yearly_url,
+            'active': active
         }
         return render(request,'subscriptions/pricing.html', context=context)
     

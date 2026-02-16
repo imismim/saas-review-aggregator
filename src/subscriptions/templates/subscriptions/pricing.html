@@ -8,12 +8,19 @@
     utilities with little customization.
   </p>
 </div>
+
 <div class="container">
+  <ul class="nav nav-pills justify-content-center mb-3">
+    <li class="nav-item">
+      <a class="nav-link {% if active == 'month' %}active{% endif %}" aria-current="page" href="{{ monthly_url }}">Monthly</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if active == 'year' %}active{% endif %}" href="{{ yearly_url }}">Yearly</a>
+    </li>
+  </ul>
+  <br>
   <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
-    {% for price_object in monthly_qs %}
-      {% include 'subscriptions/snippets/pricing-card.html' with object=price_object %}
-    {% endfor %}
-    {% for price_object in yearly_qs %}
+    {% for price_object in object_qs %}
       {% include 'subscriptions/snippets/pricing-card.html' with object=price_object %}
     {% endfor %}
   </div>
