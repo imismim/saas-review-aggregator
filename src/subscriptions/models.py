@@ -134,7 +134,7 @@ class UserSubscription(models.Model):
         INCOMPLETE = "incomplete", "Incomplete"
         IMCOMLETE_EXPIRED = "incomplete_expired", "Incomplete Expired"
         PAST_DUE = "past_due", "Past Due"
-        CANCELLED = "cancelled", "Cancelled"
+        CANCELLED = "canceled", "Canceled" 
         UNPAID = "unpaid", "Unpaid"
         PAUSED = "paused", "Paused"
      
@@ -151,5 +151,15 @@ class UserSubscription(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
-
+    
+    
+    
+    def serialize(self):
+        return {
+            "name": self.subscription.name if self.subscription else "Free Plan",
+            "stripe_id": self.stripe_id,
+            "current_period_start": self.current_period_start if self.current_period_start else None,
+            "current_period_end": self.current_period_end if self.current_period_end else None,
+            "status": self.get_status_display()
+        }
     

@@ -59,12 +59,16 @@
                 </ul>
             </div>
 
-            <div class="card shadow-sm border-0">
+            <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-white fw-bold">Account Details</div>
                 <div class="card-body small">
                     <p class="mb-0 text-muted">Joined on {{ user.date_joined|date:"F d, Y" }}</p>
                 </div>
             </div>
+        </div>
+
+        <div class="col-md-8">
+            {% include 'users/snippets/subscription-info.html' with sub_data=sub_data %}
         </div>
     </div>
 </div>
