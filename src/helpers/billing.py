@@ -1,6 +1,7 @@
 from decouple import config
 from django.conf import settings
 import stripe
+from .date_urils import timestamp_to_datetime
 
 DEBUG = settings.DEBUG
 STRIPE_SECRET_KEY = settings.STRIPE_SECRET_KEY
@@ -88,7 +89,18 @@ def get_checkout_customer_plan(session_id=""):
     sub_response = get_subscription(stripe_id=sub_stripe_id)
     sub_plan = sub_response.get("plan", {})
     plan_id = sub_plan.get("id")
-    return customer_id, plan_id, sub_stripe_id
+
+    current_period_start = timestamp_to_datetime(sub_response.get("current_period_start"))
+    current_period_end = timestamp_to_datetime(sub_response.get("current_period_end"))
+ 
+    data ={
+        "customer_id": customer_id,
+        "plan_id": plan_id,
+        "sub_stripe_id": sub_stripe_id,
+        "current_period_start": current_period_start,
+        "current_period_end": current_period_end,
+    }
+    return data
 
 
 def cancel_subscription(stripe_id="", reason="", feedback="", raw=True):

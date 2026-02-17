@@ -43,8 +43,14 @@ def checkout_redirect_view(request):
 
 def checkout_finalize_view(request):
     session_id = request.GET.get("session_id")
-    customer_id, plan_id, sub_stripe_id = get_checkout_customer_plan(session_id=session_id)
+    checkout_data = get_checkout_customer_plan(session_id=session_id)
     
+    customer_id = checkout_data.get("customer_id")
+    plan_id = checkout_data.get("plan_id")
+    sub_stripe_id = checkout_data.get("sub_stripe_id")
+    current_period_start = checkout_data.get("current_period_start")
+    current_period_end = checkout_data.get("current_period_end")
+
     try:
         sub_obj =  Subscription.objects.get(subscriptionprice__stripe_id=plan_id)
         user_obj = User.objects.get(customer__stripe_id=customer_id)
@@ -56,10 +62,12 @@ def checkout_finalize_view(request):
     if user_sub_qs.exists():
         old_stripe_id = user_sub_qs.first().stripe_id
         
-    user_sub_obj, created = UserSubscription.objects.update_or_create(user=user_obj, 
+    user_sub_obj, created = UserSubscription.objects.update_or_create(user=user_obj,     
                                                                        defaults={'subscription': sub_obj,
                                                                                  'stripe_id': sub_stripe_id,
-                                                                                 'user_cancelled': False})
+                                                                                 'user_cancelled': False,
+                                                                                 'current_period_start': current_period_start,
+                                                                                 'current_period_end': current_period_end})
     
     if old_stripe_id and old_stripe_id != sub_stripe_id:
         try:

@@ -38,8 +38,8 @@ class SubscriptionAdmin(admin.ModelAdmin):
     count_prices.short_description = 'Number of Prices'
 @admin.register(UserSubscription)
 class UserSubscriptionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'view_user_link','view_subscription_link', 'active', 'created_at', 'updated_at')
-    readonly_fields = ('stripe_id',)
+    list_display = ('id', 'view_user_link','view_subscription_link', 'active', 'current_period_start', 'current_period_end')
+    readonly_fields = ('stripe_id', 'current_period_start', 'current_period_end')
     list_filter = ('active', 'created_at', 'updated_at')
     search_fields = ('user__username', 'subscription__name')
     

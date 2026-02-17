@@ -133,6 +133,10 @@ class UserSubscription(models.Model):
     active = models.BooleanField(default=True)
     stripe_id = models.CharField(max_length=100, null=True, blank=True)
     user_cancelled = models.BooleanField(default=False)
+    current_period_start = models.DateTimeField(auto_now=False, auto_now_add=False,
+                                                null=True, blank=True)
+    current_period_end = models.DateTimeField(auto_now=False, auto_now_add=False,
+                                              null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
