@@ -58,7 +58,8 @@ def checkout_finalize_view(request):
         
     user_sub_obj, created = UserSubscription.objects.update_or_create(user=user_obj, 
                                                                        defaults={'subscription': sub_obj,
-                                                                                 'stripe_id': sub_stripe_id })
+                                                                                 'stripe_id': sub_stripe_id,
+                                                                                 'user_cancelled': False})
     
     if old_stripe_id and old_stripe_id != sub_stripe_id:
         try:
