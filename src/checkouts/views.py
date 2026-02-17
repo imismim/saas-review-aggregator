@@ -44,7 +44,7 @@ def checkout_redirect_view(request):
 
 def checkout_finalize_view(request):
     session_id = request.GET.get("session_id")
-    customer_id, plan_id = get_checkout_customer_plan(session_id=session_id)
+    customer_id, plan_id, sub_stripe_id = get_checkout_customer_plan(session_id=session_id)
     try:
         sub_obj =  Subscription.objects.get(subscriptionprice__stripe_id=plan_id)
     except:
@@ -56,16 +56,17 @@ def checkout_finalize_view(request):
         user_obj = None
         
     try:
-        user_sub_obj, created = UserSubscription.objects.get_or_create(user=user_obj, 
-                                                                       defaults={'subscription': sub_obj})
+        user_sub_obj, created = UserSubscription.objects.update_or_create(user=user_obj, 
+                                                                       defaults={'subscription': sub_obj,
+                                                                                 'stripe_id': sub_stripe_id })
     except:
-        user_sub_obj = None
+        user_sub_obj = None 
         
     if None in [sub_obj, user_obj, user_sub_obj]:
-        return HttpResponse("Something went wrong while processing your subscription. Please contact support.")
+        return HttpResponse("Something went wrong while processing your subscription. Please contact support.") #TODO: enhance this message and add contact support link
          
     context = {
- 
+        "subscription": sub_obj,
     }
  
     return render(request, 'checkouts/success.html', context=context)

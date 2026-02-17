@@ -22,12 +22,12 @@
             <span class="text-muted">Status</span>
             <span
               class="badge bg-success-soft text-success border border-success px-3"
-              >Active</span
+              >{% if subscription.active %}Active{% else %}Inactive{% endif %}</span
             >
           </div>
           <div class="d-flex justify-content-between">
             <span class="text-muted">Plan</span>
-            <span class="fw-bold">Pro Monthly</span>
+            <span class="fw-bold">{{ subscription.name|title }}</span>
           </div>
         </div>
       </div>

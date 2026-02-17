@@ -39,6 +39,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
 @admin.register(UserSubscription)
 class UserSubscriptionAdmin(admin.ModelAdmin):
     list_display = ('id', 'view_user_link','view_subscription_link', 'active', 'created_at', 'updated_at')
+    readonly_fields = ('stripe_id',)
     list_filter = ('active', 'created_at', 'updated_at')
     search_fields = ('user__username', 'subscription__name')
     
