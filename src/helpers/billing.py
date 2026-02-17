@@ -11,6 +11,17 @@ if "sk_test" in STRIPE_SECRET_KEY and not DEBUG:
 
 stripe.api_key = STRIPE_SECRET_KEY
 
+def serialize_subscription_data(sub_response):
+    status = sub_response.get("status")
+    
+    current_period_start = timestamp_to_datetime(sub_response.get("current_period_start"))
+    current_period_end = timestamp_to_datetime(sub_response.get("current_period_end"))
+    
+    return {
+        'current_period_start': current_period_start,
+        'current_period_end': current_period_end,
+        'status': status } 
+    
 def create_customer(name="", email="", metadata={}, raw=False):
     response = stripe.Customer.create(
         name=name,
@@ -78,9 +89,10 @@ def get_subscription(stripe_id="", raw=True):
     response = stripe.Subscription.retrieve(stripe_id)
     if raw:
         return response
-    return response.get("status")
+    return serialize_subscription_data(response)
 
 
+    
 def get_checkout_customer_plan(session_id=""):
     checkout_response = get_checkout_session(stripe_id=session_id)
     customer_id = checkout_response.get("customer")
@@ -89,16 +101,14 @@ def get_checkout_customer_plan(session_id=""):
     sub_response = get_subscription(stripe_id=sub_stripe_id)
     sub_plan = sub_response.get("plan", {})
     plan_id = sub_plan.get("id")
-
-    current_period_start = timestamp_to_datetime(sub_response.get("current_period_start"))
-    current_period_end = timestamp_to_datetime(sub_response.get("current_period_end"))
+    
+    subscription_data = serialize_subscription_data(sub_response)
  
     data ={
         "customer_id": customer_id,
         "plan_id": plan_id,
         "sub_stripe_id": sub_stripe_id,
-        "current_period_start": current_period_start,
-        "current_period_end": current_period_end,
+        **subscription_data
     }
     return data
 
@@ -110,4 +120,4 @@ def cancel_subscription(stripe_id="", reason="", feedback="", raw=True):
                                               "feedback": feedback,
                                           })
     if raw:
-        return response 
+        return response   

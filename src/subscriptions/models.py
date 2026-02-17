@@ -128,15 +128,26 @@ class SubscriptionPrice(models.Model):
        
 
 class UserSubscription(models.Model):
+    class SubscriptionStatus(models.TextChoices):
+        ACTIVE = "active", "Active"
+        TRIALING = "trialing", "Trialing"
+        INCOMPLETE = "incomplete", "Incomplete"
+        IMCOMLETE_EXPIRED = "incomplete_expired", "Incomplete Expired"
+        PAST_DUE = "past_due", "Past Due"
+        CANCELLED = "cancelled", "Cancelled"
+        UNPAID = "unpaid", "Unpaid"
+        PAUSED = "paused", "Paused"
+     
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     subscription = models.ForeignKey(Subscription, on_delete=models.SET_NULL, null=True, blank=True)
     active = models.BooleanField(default=True)
-    stripe_id = models.CharField(max_length=100, null=True, blank=True)
+    stripe_id = models.CharField(max_length=100, null=True, blank=True) 
     user_cancelled = models.BooleanField(default=False)
     current_period_start = models.DateTimeField(auto_now=False, auto_now_add=False,
                                                 null=True, blank=True)
     current_period_end = models.DateTimeField(auto_now=False, auto_now_add=False,
                                               null=True, blank=True)
+    status = models.CharField(max_length=20, default=SubscriptionStatus.ACTIVE, choices=SubscriptionStatus.choices)
     
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)

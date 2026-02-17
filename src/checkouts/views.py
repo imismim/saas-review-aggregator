@@ -39,18 +39,17 @@ def checkout_redirect_view(request):
         raw=False
     )
     return redirect(url)
-
+  
 
 def checkout_finalize_view(request):
     session_id = request.GET.get("session_id")
     checkout_data = get_checkout_customer_plan(session_id=session_id)
     
-    customer_id = checkout_data.get("customer_id")
-    plan_id = checkout_data.get("plan_id")
-    sub_stripe_id = checkout_data.get("sub_stripe_id")
-    current_period_start = checkout_data.get("current_period_start")
-    current_period_end = checkout_data.get("current_period_end")
-
+    customer_id = checkout_data.pop("customer_id")
+    plan_id = checkout_data.pop("plan_id")
+    sub_stripe_id = checkout_data.pop("sub_stripe_id")
+    subscription_data = {**checkout_data}
+    
     try:
         sub_obj =  Subscription.objects.get(subscriptionprice__stripe_id=plan_id)
         user_obj = User.objects.get(customer__stripe_id=customer_id)
@@ -60,15 +59,14 @@ def checkout_finalize_view(request):
     user_sub_qs = UserSubscription.objects.filter(user=user_obj)
     old_stripe_id = None
     if user_sub_qs.exists():
-        old_stripe_id = user_sub_qs.first().stripe_id
+        old_stripe_id = user_sub_qs.first().stripe_id 
         
-    user_sub_obj, created = UserSubscription.objects.update_or_create(user=user_obj,     
-                                                                       defaults={'subscription': sub_obj,
-                                                                                 'stripe_id': sub_stripe_id,
-                                                                                 'user_cancelled': False,
-                                                                                 'current_period_start': current_period_start,
-                                                                                 'current_period_end': current_period_end})
-    
+    UserSubscription.objects.update_or_create(user=user_obj,
+                                              defaults={'subscription': sub_obj,
+                                                        'stripe_id': sub_stripe_id,
+                                                        'user_cancelled': False,
+                                                        **subscription_data})
+
     if old_stripe_id and old_stripe_id != sub_stripe_id:
         try:
             cancel_subscription(stripe_id=old_stripe_id, reason="update_subscription", raw=False)
