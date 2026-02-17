@@ -7,9 +7,8 @@ from django.http import HttpResponse
 
 from subscriptions.models import SubscriptionPrice, Subscription, UserSubscription
 from helpers.billing import (start_checkout_session,
-                             get_checkout_session,
-                             get_subscription,
-                             get_checkout_customer_plan)
+                             get_checkout_customer_plan,
+                             cancel_subscription)
 # Create your views here.
 
 User = get_user_model()
@@ -45,26 +44,28 @@ def checkout_redirect_view(request):
 def checkout_finalize_view(request):
     session_id = request.GET.get("session_id")
     customer_id, plan_id, sub_stripe_id = get_checkout_customer_plan(session_id=session_id)
-    try:
-        sub_obj =  Subscription.objects.get(subscriptionprice__stripe_id=plan_id)
-    except:
-        sub_obj = None
     
     try:
+        sub_obj =  Subscription.objects.get(subscriptionprice__stripe_id=plan_id)
         user_obj = User.objects.get(customer__stripe_id=customer_id)
     except:
-        user_obj = None
+        return HttpResponse("Required data not found.")
         
-    try:
-        user_sub_obj, created = UserSubscription.objects.update_or_create(user=user_obj, 
+    user_sub_qs = UserSubscription.objects.filter(user=user_obj)
+    old_stripe_id = None
+    if user_sub_qs.exists():
+        old_stripe_id = user_sub_qs.first().stripe_id
+        
+    user_sub_obj, created = UserSubscription.objects.update_or_create(user=user_obj, 
                                                                        defaults={'subscription': sub_obj,
                                                                                  'stripe_id': sub_stripe_id })
-    except:
-        user_sub_obj = None 
-        
-    if None in [sub_obj, user_obj, user_sub_obj]:
-        return HttpResponse("Something went wrong while processing your subscription. Please contact support.") #TODO: enhance this message and add contact support link
-         
+    
+    if old_stripe_id and old_stripe_id != sub_stripe_id:
+        try:
+            cancel_subscription(stripe_id=old_stripe_id, reason="update_subscription", raw=False)
+        except:
+            return HttpResponse("Could not cancel old subscription. Please contact support.")
+
     context = {
         "subscription": sub_obj,
     }
