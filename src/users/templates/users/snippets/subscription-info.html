@@ -5,7 +5,7 @@
     <span class="fw-bold"
       ><i class="bi bi-credit-card me-2"></i>Subscription Management</span
     >
-    {% if sub_data.status == 'active' %}
+    {% if sub_data.status == 'Active' %}
     <span
       class="badge bg-success-subtle text-success border border-success-subtle"
       >{{ sub_data.status }}</span
@@ -19,7 +19,7 @@
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-start mb-4">
       <div>
-        <h3 class="fw-bold text-primary mb-1">{{ sub_data.name|title }}</h3>
+        <h3 class="fw-bold text-primary mb-1">{{ sub_data.name|title }} plan</h3>
         <p class="text-muted small">
           ID: {{ sub_data.stripe_id|default:"None" }}
         </p>
@@ -55,7 +55,7 @@
     <div class="d-flex gap-2">
       <a href="{% url 'pricing' %}" class="btn btn-primary"> Change Plan </a>
       <button class="btn btn-link text-danger text-decoration-none small">
-        Cancel sub_data
+        Cancel subscription
       </button>
     </div>
   </div>
