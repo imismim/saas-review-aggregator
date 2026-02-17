@@ -8,6 +8,7 @@ from django.http import HttpResponse
 from subscriptions.models import SubscriptionPrice, Subscription, UserSubscription
 from helpers.billing import (start_checkout_session,
                              get_checkout_customer_plan,
+                             get_subscription,
                              cancel_subscription)
 # Create your views here.
 
@@ -68,8 +69,11 @@ def checkout_finalize_view(request):
                                                         **subscription_data})
 
     if old_stripe_id and old_stripe_id != sub_stripe_id:
+        old_sub_response = get_subscription(stripe_id=old_stripe_id, raw=False)
+        old_sub_status = old_sub_response.get("status")
         try:
-            cancel_subscription(stripe_id=old_stripe_id, reason="update_subscription", raw=False)
+            if old_sub_status in ["active", "trialing"]:
+                cancel_subscription(stripe_id=old_stripe_id, reason="update_subscription", raw=False)
         except:
             return HttpResponse("Could not cancel old subscription. Please contact support.")
 
