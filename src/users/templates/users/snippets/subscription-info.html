@@ -54,9 +54,14 @@
   <div class="card-footer bg-white border-top-0 py-3">
     <div class="d-flex gap-2">
       <a href="{% url 'pricing' %}" class="btn btn-primary"> Change Plan </a>
-      <button class="btn btn-link text-danger text-decoration-none small">
+      {% if not sub_data.is_active_status or not sub_data.cancel_at_the_period %}
+      <form action="{{ sub_data.cancel_url }}" method="POST">
+        {% csrf_token %}
+        <button class="btn btn-link text-danger text-decoration-none small">
         Cancel subscription
       </button>
+      </form>
+      {% endif %}
     </div>
   </div>
 </div>

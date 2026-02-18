@@ -147,19 +147,31 @@ class UserSubscription(models.Model):
                                                 null=True, blank=True)
     current_period_end = models.DateTimeField(auto_now=False, auto_now_add=False,
                                               null=True, blank=True)
+    cancel_at_period_end = models.BooleanField(default=False)
     status = models.CharField(max_length=20, default=SubscriptionStatus.ACTIVE, choices=SubscriptionStatus.choices)
     
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
     
+    @property
+    def is_active_status(self):
+        return self.status in   [
+            self.SubscriptionStatus.ACTIVE,
+            self.SubscriptionStatus.TRIALING]
     
-    
+    @property
+    def get_cancel_url(self):
+        return reverse('cancel-subscription')
+
     def serialize(self):
         return {
             "name": self.subscription.name if self.subscription else "Free Plan",
             "stripe_id": self.stripe_id,
             "current_period_start": self.current_period_start if self.current_period_start else None,
             "current_period_end": self.current_period_end if self.current_period_end else None,
-            "status": self.get_status_display()
+            "status": self.get_status_display(),
+            'is_active_status': self.is_active_status,
+            'cancel_at_the_period': self.cancel_at_period_end,
+            'cancel_url': self.get_cancel_url
         }
     
