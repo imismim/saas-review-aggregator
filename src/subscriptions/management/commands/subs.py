@@ -27,6 +27,12 @@ class Command(BaseCommand):
             nargs='*',
             help='Refresh UserSubscription records for one or more users, if nothing is passed it will refresh all UserSubscription records.',
         )
+        parser.add_argument(
+            '--force',
+            action='store_true', 
+            help='Force the update even if the record is recently synced. Use with --refresh to ensure all records are updated.',
+            default=False
+        )
 
     def handle(self, *args, **kwargs):
         sync_perm = kwargs.get('sync_perm')
@@ -38,10 +44,11 @@ class Command(BaseCommand):
         elif dangling:
             clear_dangling_subs(self=self)
         elif refresh == [] or refresh:
+            force = kwargs.get('force')
             if refresh == []:
-                refresh_active_users_subscriptions(self=self)
+                refresh_active_users_subscriptions(self=self, all=force)
             else:
-                refresh_active_users_subscriptions(self=self, user_ids=refresh)
+                refresh_active_users_subscriptions(self=self, user_ids=refresh, all=force)
         else:
             print(refresh)
             self.stdout.write(self.style.WARNING('No action specified.\nUse --sync-perm, --dangling, or --refresh.'))

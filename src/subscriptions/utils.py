@@ -10,9 +10,13 @@ def get_self(self=None):
     style_error = self.style.ERROR if self else lambda x: x
     return out, style_success, style_error
 
-def refresh_active_users_subscriptions(self=None, user_ids=None):
+def refresh_active_users_subscriptions(self=None, user_ids=None, all=False):
+    
     out, style_success, style_error = get_self(self)
-    users_subs_qs = UserSubscription.objects.all_active()
+    if all:
+        users_subs_qs = UserSubscription.objects.all()
+    else:   
+        users_subs_qs = UserSubscription.objects.all_active()
     
     if isinstance(user_ids, list):
         users_subs_qs = users_subs_qs.filter(user_id__in=user_ids)
