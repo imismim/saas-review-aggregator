@@ -94,6 +94,13 @@ def get_subscription(stripe_id="", raw=True):
         return response
     return serialize_subscription_data(response)
 
+def get_customer_list_subscriptions(customer_stripe_id="", limit=10):
+    response = stripe.Subscription.list(
+        limit=limit,
+        customer=customer_stripe_id,
+        status="active")
+    
+    return response
 
     
 def get_checkout_customer_plan(session_id=""):
