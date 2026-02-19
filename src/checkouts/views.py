@@ -75,7 +75,7 @@ def checkout_finalize_view(request):
             if old_sub_status in ["active", "trialing"]:
                 cancel_subscription(stripe_id=old_stripe_id, reason="update_subscription", raw=False)
         except:
-            return HttpResponse("Could not cancel old subscription. Please contact support.")
+            return HttpResponse("Could not     old subscription. Please contact support.")
 
     context = {
         "subscription": sub_obj,

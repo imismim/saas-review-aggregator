@@ -21,8 +21,13 @@
       <div>
         <h3 class="fw-bold text-primary mb-1">{{ sub_data.name|title }} plan</h3>
         <p class="text-muted small">
-          ID: {{ sub_data.stripe_id|default:"None" }}
+          ID: {{ sub_data.stripe_id|default:"-" }}
         </p>
+        {% if sub_data.cancel_at_the_period %}
+        <p class="text-danger small">
+          Your subscription will end, you won't be charged again after {{ sub_data.current_period_end|date:"M d, Y" }}.
+        </p>
+        {% endif %}
       </div>
       <form method="POST">
         {% csrf_token %}

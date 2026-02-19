@@ -1,5 +1,6 @@
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages as message
 
 from subscriptions.models import UserSubscription
 from helpers.billing import get_subscription
@@ -21,7 +22,6 @@ class ProfileView(LoginRequiredMixin, TemplateView):
         return context
     
     def post(self, request, *args, **kwargs):
-        print("refreshing subscription status")
         context = self.get_context_data(**kwargs)   
         sub_data = context.get('sub_data')
         stripe_id = sub_data.get('stripe_id')
@@ -31,6 +31,7 @@ class ProfileView(LoginRequiredMixin, TemplateView):
             for k, v in refresh_user_sub_data.items():
                 setattr(user_sub_obj, k, v)
             user_sub_obj.save()
+            message.success(request, "Subscription refreshed successfully.")
         return self.get(request, *args, **kwargs)
 
 profile_view = ProfileView.as_view()
