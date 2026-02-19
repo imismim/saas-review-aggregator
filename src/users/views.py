@@ -4,6 +4,7 @@ from django.contrib import messages as message
 
 from subscriptions.models import UserSubscription
 from helpers.billing import get_subscription
+from subscriptions.utils import refresh_active_users_subscriptions
 # Create your views here.
 
 
@@ -15,23 +16,18 @@ class ProfileView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         user_subscriptions, created = UserSubscription.objects.get_or_create(user=user)
-        from pprint import pprint
-        pprint(user_subscriptions.serialize())
-        context['sub_data'] = user_subscriptions.serialize()
 
+        context['sub_data'] = user_subscriptions.serialize() if user_subscriptions.stripe_id else None
         return context
     
     def post(self, request, *args, **kwargs):
-        context = self.get_context_data(**kwargs)   
-        sub_data = context.get('sub_data')
-        stripe_id = sub_data.get('stripe_id')
-        if stripe_id:
-            refresh_user_sub_data = get_subscription(stripe_id, raw=False)
-            user_sub_obj, created = UserSubscription.objects.get_or_create(stripe_id=stripe_id)
-            for k, v in refresh_user_sub_data.items():
-                setattr(user_sub_obj, k, v)
-            user_sub_obj.save()
+        user_id = request.user.id
+        is_success = refresh_active_users_subscriptions(user_ids=user_id)
+        if is_success:
             message.success(request, "Subscription refreshed successfully.")
+        else:
+            message.error(request, "Failed to refresh subscription.")
+            
         return self.get(request, *args, **kwargs)
 
 profile_view = ProfileView.as_view()

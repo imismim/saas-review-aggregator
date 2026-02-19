@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 from django.contrib.auth.models import Group, Permission
 from django.conf import settings
 from django.urls import reverse
@@ -127,16 +128,30 @@ class SubscriptionPrice(models.Model):
                 qs.update(featured=False)
        
 
+class SubscriptionStatus(models.TextChoices):
+    ACTIVE = "active", "Active"
+    TRIALING = "trialing", "Trialing"
+    INCOMPLETE = "incomplete", "Incomplete"
+    IMCOMLETE_EXPIRED = "incomplete_expired", "Incomplete Expired"
+    PAST_DUE = "past_due", "Past Due"
+    CANCELLED = "canceled", "Canceled" 
+    UNPAID = "unpaid", "Unpaid"
+    PAUSED = "paused", "Paused"
+
+class UserSubscriptionQuerySet(models.QuerySet):
+    def active(self):
+        return self.filter(Q(status=SubscriptionStatus.ACTIVE) | Q(status=SubscriptionStatus.TRIALING))
+
+class UserSubscriptionManager(models.Manager):
+    def get_queryset(self):
+        return UserSubscriptionQuerySet(self.model, using=self._db)
+    
+    def all_active(self):
+        return self.get_queryset().active()
+
 class UserSubscription(models.Model):
-    class SubscriptionStatus(models.TextChoices):
-        ACTIVE = "active", "Active"
-        TRIALING = "trialing", "Trialing"
-        INCOMPLETE = "incomplete", "Incomplete"
-        IMCOMLETE_EXPIRED = "incomplete_expired", "Incomplete Expired"
-        PAST_DUE = "past_due", "Past Due"
-        CANCELLED = "canceled", "Canceled" 
-        UNPAID = "unpaid", "Unpaid"
-        PAUSED = "paused", "Paused"
+
+    objects = UserSubscriptionManager()
      
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     subscription = models.ForeignKey(Subscription, on_delete=models.SET_NULL, null=True, blank=True)
@@ -156,8 +171,8 @@ class UserSubscription(models.Model):
     @property
     def is_active_status(self):
         return self.status in   [
-            self.SubscriptionStatus.ACTIVE,
-            self.SubscriptionStatus.TRIALING]
+            SubscriptionStatus.ACTIVE,
+            SubscriptionStatus.TRIALING]
     
     @property
     def get_cancel_url(self):

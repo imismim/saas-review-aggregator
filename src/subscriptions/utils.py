@@ -1,11 +1,42 @@
-from helpers.billing import get_customer_list_subscriptions, cancel_subscription
+from helpers.billing import (get_customer_list_subscriptions, 
+                             cancel_subscription, 
+                             get_subscription)
 from customers.models import Customer
 from subscriptions.models import UserSubscription, Subscription
 
-
-def clear_dangling_subs(self=None):
-    out = self.stdout.write if self else print
+def get_self(self=None):
+    out = self.stdout.write if self else print 
     style_success = self.style.SUCCESS if self else lambda x: x
+    return out, style_success
+
+def refresh_active_users_subscriptions(self=None, user_ids=None):
+    out, style_success = get_self(self)
+    users_subs_qs = UserSubscription.objects.all_active()
+    
+    if isinstance(user_ids, list):
+        users_subs_qs = users_subs_qs.filter(user_id__in=user_ids)
+    elif isinstance(user_ids, int):
+        users_subs_qs = users_subs_qs.filter(user_id=user_ids)
+    elif isinstance(user_ids, str):
+        users_subs_qs = users_subs_qs.filter(user_id=int(user_ids))
+    
+    success_count = 0
+    qs_count = users_subs_qs.count()
+    for subs in users_subs_qs:
+        stripe_id = subs.stripe_id
+        if stripe_id:
+            refresh_user_sub_data = get_subscription(stripe_id, raw=False)
+            user_sub_obj, created = UserSubscription.objects.get_or_create(stripe_id=stripe_id)
+            for k, v in refresh_user_sub_data.items():
+                setattr(user_sub_obj, k, v)
+            user_sub_obj.save()
+            out(style_success(f"Refreshed subscription for user {subs.user} - {stripe_id}"))
+            success_count += 1
+    
+    return success_count == qs_count
+    
+def clear_dangling_subs(self=None):
+    out, style_success = get_self(self) 
     
     qs = Customer.objects.filter(stripe_id__isnull=False)
     for customer_obj in qs:
@@ -29,8 +60,8 @@ def clear_dangling_subs(self=None):
             
             
 def sync_permissions(self=None):
-    out = self.stdout.write if self else print
-    style_success = self.style.SUCCESS if self else lambda x: x
+    out, style_success = get_self(self)
+    
     qs = Subscription.objects.filter(active=True)
     for sub in qs:
         perms = sub.permissions.all()
