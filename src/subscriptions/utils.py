@@ -15,7 +15,7 @@ def refresh_active_users_subscriptions(self=None,
                                        only_active=False, 
                                        days_left=0, 
                                        days_ago=0,
-                                       days_range=None
+                                       days_range=[0, 0]
                                     ):
     
     out, style_success, style_error = get_self(self)
