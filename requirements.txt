@@ -32,3 +32,4 @@ requests
 
 # Monitoring & Debugging (Development/Production)
 flower  
+gunicorn

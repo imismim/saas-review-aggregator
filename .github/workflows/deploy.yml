@@ -19,5 +19,5 @@ jobs:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
           heroku_app_name: "reviews-aggregator"  
           dockerfile_directory: ./
-          dockerfile_name: Dockerfile
+          dockerfile_name: docker/prod/Dockerfile
           process_type: web
