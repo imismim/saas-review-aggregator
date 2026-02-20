@@ -1,6 +1,6 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
-from .models import UserSubscription, Subscription
+from .models import UserSubscription, Subscription, SubscriptionPrice
 
 ALLOW_CUSTOM_GROUPS = True
 
@@ -13,6 +13,8 @@ def update_user_permissions(sender, instance, created, **kwargs):
     if subscription is not None:
         groups = subscription.groups.all()
         groups_ids = groups.values_list('id', flat=True)
+    else:
+        return
 
     if not ALLOW_CUSTOM_GROUPS:
         user.groups.set(groups)
@@ -31,4 +33,18 @@ def update_user_permissions(sender, instance, created, **kwargs):
 
         final_group_ids  = list(groups_ids_set | currunt_groups_set)
         user.groups.set(final_group_ids)
-    print(f"Updated permissions for user {user.username} to {subscription.name}")
+        print(f"Updated permissions for user {user.username} to {subscription.name}")
+        
+        
+@receiver(pre_delete, sender=Subscription)
+def change_featured_status(sender, instance, **kwargs):
+    subscription_prices = SubscriptionPrice.objects.filter(
+            subscription_id=instance.id, 
+            featured=True
+        )
+        
+    for sub_price in subscription_prices:
+        print(sub_price)
+        sub_price.featured = False
+        print('feature', sub_price.featured)
+        sub_price.save()
