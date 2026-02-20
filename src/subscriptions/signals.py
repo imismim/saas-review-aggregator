@@ -13,6 +13,8 @@ def update_user_permissions(sender, instance, created, **kwargs):
     if subscription is not None:
         groups = subscription.groups.all()
         groups_ids = groups.values_list('id', flat=True)
+    else:
+        return
 
     if not ALLOW_CUSTOM_GROUPS:
         user.groups.set(groups)
@@ -31,4 +33,4 @@ def update_user_permissions(sender, instance, created, **kwargs):
 
         final_group_ids  = list(groups_ids_set | currunt_groups_set)
         user.groups.set(final_group_ids)
-    print(f"Updated permissions for user {user.username} to {subscription.name}")
+        print(f"Updated permissions for user {user.username} to {subscription.name}")
