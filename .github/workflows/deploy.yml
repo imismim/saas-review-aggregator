@@ -10,14 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v2
 
+      - name: Install Heroku CLI
+        run: |
+          curl https://cli-assets.heroku.com/install.sh | sh
+          
       - name: Build and Push Docker Image
         uses: akhileshns/heroku-deploy@v3.14.15
         with:
-          email: ${{ secrets.HEROKU_EMAIL }}
-          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
           heroku_app_name: "reviews-aggregator"  
-          dockerfile_directory: ./docker/prod
-          dockerfile_name: Dockerfile
-          dontautocreate: true
+          heroku_email: ${{secrets.HEROKU_EMAIL}}
+          use_docker: true
