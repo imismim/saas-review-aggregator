@@ -3,6 +3,7 @@ from django.db.models import Q
 from django.contrib.auth.models import Group, Permission
 from django.conf import settings
 from django.urls import reverse
+from django.utils import timezone
 
 from helpers.billing import create_product, create_price
 # Create your models here.
@@ -153,8 +154,42 @@ class UserSubscriptionQuerySet(models.QuerySet):
             users_qs = self.filter(user_id=int(user_ids))
         else:
             users_qs = self.none()
-
         return users_qs
+
+    def by_days_left(self, days_left=7):
+        now = timezone.now()
+        in_n_days = now + timezone.timedelta(days=days_left)
+        in_n_days_min = in_n_days.replace(hour=0, minute=0, second=0, microsecond=0)
+        in_n_days_max  = in_n_days.replace(hour=23, minute=59, second=59, microsecond=999999)
+        
+        return self.filter(
+            current_period_end__gte=in_n_days_min,
+            current_period_end__lte=in_n_days_max
+        )
+    
+    def by_days_ago(self, days_ago=3):
+        now = timezone.now()
+        ago_n_days = now - timezone.timedelta(days=days_ago)
+        in_n_days_min = ago_n_days.replace(hour=0, minute=0, second=0, microsecond=0)
+        in_n_days_max  = ago_n_days.replace(hour=23, minute=59, second=59, microsecond=999999)
+        
+        return self.filter(
+            current_period_end__gte=in_n_days_min,
+            current_period_end__lte=in_n_days_max
+        )
+        
+    def by_days_range(self, day_min=7, day_max=30):
+        now = timezone.now()
+        in_min_days = now + timezone.timedelta(days=day_min)
+        in_max_days = now + timezone.timedelta(days=day_max)
+        
+        in_min_days_start = in_min_days.replace(hour=0, minute=0, second=0, microsecond=0)
+        in_max_days_end  = in_max_days.replace(hour=23, minute=59, second=59, microsecond=999999)
+        
+        return self.filter(
+            current_period_end__gte=in_min_days_start,
+            current_period_end__lte=in_max_days_end
+        )
 
 class UserSubscriptionManager(models.Manager):
     def get_queryset(self):
@@ -165,6 +200,12 @@ class UserSubscriptionManager(models.Manager):
     
     def by_user_ids(self, user_ids=None):
         return self.get_queryset().by_user_ids(user_ids=user_ids)
+    
+    def by_days_left(self, days=7):
+        return self.get_queryset().by_days_left(days_left=days)
+
+    def by_days_ago(self, days=3):
+        return self.get_queryset().by_days_ago(days_ago=days)
     
 class UserSubscription(models.Model):
 

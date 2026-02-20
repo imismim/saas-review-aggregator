@@ -10,13 +10,27 @@ def get_self(self=None):
     style_error = self.style.ERROR if self else lambda x: x
     return out, style_success, style_error
 
-def refresh_active_users_subscriptions(self=None, user_ids=None, only_active=False):
+def refresh_active_users_subscriptions(self=None, 
+                                       user_ids=None, 
+                                       only_active=False, 
+                                       days_left=0, 
+                                       days_ago=0,
+                                       days_range=None
+                                    ):
     
     out, style_success, style_error = get_self(self)
     if only_active:
         users_subs_qs = UserSubscription.objects.all_active()
     else:   
         users_subs_qs = UserSubscription.objects.all()
+    
+    if days_left > 0:
+        users_subs_qs = users_subs_qs.by_days_left(days_left=days_left)
+    if days_ago > 0:
+        users_subs_qs = users_subs_qs.by_days_ago(days_ago=days_ago)
+        
+    if days_range[0] > 0 and days_range[1] > 0:
+        users_subs_qs = users_subs_qs.by_days_range(day_min=days_range[0], day_max=days_range[1])
     
     users_subs_qs = users_subs_qs.by_user_ids(user_ids=user_ids)
     
