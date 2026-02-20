@@ -55,3 +55,7 @@ yarn-error.log*
 Dockerfile*
 docker-compose*.yml
 .dockerignore
+
+src/staticfiles
+src/media
+docker/
