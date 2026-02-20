@@ -1,0 +1,250 @@
+from django.db import models
+from django.db.models import Q
+from django.contrib.auth.models import Group, Permission
+from django.conf import settings
+from django.urls import reverse
+from django.utils import timezone
+
+from helpers.billing import create_product, create_price
+# Create your models here.
+
+User = settings.AUTH_USER_MODEL
+SUBSCRIPTION_LEVELS = [
+    ('basic', 'Basic permissions'),
+    ('advanced', 'Advanced permissions'),
+    ('pro', 'Pro permissions'),
+]
+
+class Subscription(models.Model):
+    name = models.CharField(max_length=100)
+    active = models.BooleanField(default=True)
+    groups = models.ManyToManyField(Group)
+    permissions = models.ManyToManyField(Permission, limit_choices_to={'content_type__app_label': 'subscriptions', 
+                                                                    'codename__in': [level[0] for level in SUBSCRIPTION_LEVELS]})
+    features = models.TextField(help_text="Newline-separated list of features", blank=True, null=True)
+
+    stripe_id = models.CharField(max_length=100, null=True, blank=True)
+    
+    order = models.IntegerField(default=-1)
+    featured = models.BooleanField(default=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True, editable=False)    
+    
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Subscription'
+        verbose_name_plural = 'Subscriptions'
+        permissions = SUBSCRIPTION_LEVELS
+    
+    def get_features_list(self):
+        if self.features:
+            return [feature.strip() for feature in self.features.splitlines()]
+        return [] 
+
+    def save(self, *args, **kwargs):
+        if not self.stripe_id:
+            stripe_id = create_product(
+                name=self.name, 
+                metadata={
+                    "subscription_plan_id": self.id
+                }
+            )
+            self.stripe_id = stripe_id
+        super().save(*args, **kwargs)
+
+class SubscriptionPrice(models.Model):
+    """
+    Stripe price object
+    """
+    class IntervalChoices(models.TextChoices):
+        MONTHLY = "month", "Monthly"
+        YEARLY = "year", "Yearly"
+    
+    subscription = models.ForeignKey(Subscription, on_delete=models.SET_NULL, null=True, blank=True)
+    stripe_id = models.CharField(max_length=100, null=True, blank=True)
+    interval = models.CharField(max_length=10, 
+                                choices=IntervalChoices.choices, 
+                                default=IntervalChoices.MONTHLY
+                            )
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=99.99)
+    order = models.IntegerField(default=-1)
+    featured = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True, editable=False)
+    
+    class Meta:  
+        ordering = ('subscription__order', 'order','featured','-updated_at')
+        
+    @property
+    def stripe_curruncy(self):
+        return "usd"
+
+    @property
+    def display_subscribtion_name(self):
+        if self.subscription:
+            return self.subscription.name
+        return "Plan"
+    
+    @property
+    def stripe_price(self):
+        return int(self.price * 100)
+    
+    @property
+    def display_subscribtion_features(self):
+        return self.subscription.get_features_list() if self.subscription else []
+        
+    @property
+    def product_stripe_id(self):
+        if not self.subscription:
+            return None
+        return self.subscription.stripe_id
+    
+    def get_checkout_url(self):
+        return reverse('sub-price-checkout', kwargs={'price_id': self.id})
+    
+    def save(self, *args, **kwargs):
+        if not self.stripe_id and self.product_stripe_id is not None:
+            stripe_id = create_price(
+                currency=self.stripe_curruncy,
+                unit_amount=self.stripe_price,
+                interval=self.interval,
+                product_stripe_id=self.product_stripe_id,
+                metadata={
+                    "subscription_plan_price_id": self.id
+                }
+            )
+
+            self.stripe_id = stripe_id
+        super().save(*args, **kwargs)
+        if self.featured and self.subscription:
+            qs = SubscriptionPrice.objects.filter(
+                subscription=self.subscription,
+                interval=self.interval
+            ).exclude(id=self.id) 
+            if qs.exists():
+                qs.update(featured=False)
+       
+
+class SubscriptionStatus(models.TextChoices):
+    ACTIVE = "active", "Active"
+    TRIALING = "trialing", "Trialing"
+    INCOMPLETE = "incomplete", "Incomplete"
+    IMCOMLETE_EXPIRED = "incomplete_expired", "Incomplete Expired"
+    PAST_DUE = "past_due", "Past Due"
+    CANCELLED = "canceled", "Canceled" 
+    UNPAID = "unpaid", "Unpaid"
+    PAUSED = "paused", "Paused"
+
+class UserSubscriptionQuerySet(models.QuerySet):
+    def active(self):
+        return self.filter(Q(status=SubscriptionStatus.ACTIVE) | Q(status=SubscriptionStatus.TRIALING))
+    
+    def by_user_ids(self, user_ids=None):
+        users_qs = self
+        if isinstance(user_ids, list):
+            if user_ids != []:
+                users_qs = self.filter(user_id__in=user_ids)
+        elif isinstance(user_ids, int):
+            users_qs = self.filter(user_id=user_ids)
+        elif isinstance(user_ids, str):
+            users_qs = self.filter(user_id=int(user_ids))
+        else:
+            users_qs = self.none()
+        return users_qs
+
+    def by_days_left(self, days_left=7):
+        now = timezone.now()
+        in_n_days = now + timezone.timedelta(days=days_left)
+        in_n_days_min = in_n_days.replace(hour=0, minute=0, second=0, microsecond=0)
+        in_n_days_max  = in_n_days.replace(hour=23, minute=59, second=59, microsecond=999999)
+        
+        return self.filter(
+            current_period_end__gte=in_n_days_min,
+            current_period_end__lte=in_n_days_max
+        )
+    
+    def by_days_ago(self, days_ago=3):
+        now = timezone.now()
+        ago_n_days = now - timezone.timedelta(days=days_ago)
+        in_n_days_min = ago_n_days.replace(hour=0, minute=0, second=0, microsecond=0)
+        in_n_days_max  = ago_n_days.replace(hour=23, minute=59, second=59, microsecond=999999)
+        
+        return self.filter(
+            current_period_end__gte=in_n_days_min,
+            current_period_end__lte=in_n_days_max
+        )
+        
+    def by_days_range(self, day_min=7, day_max=30):
+        now = timezone.now()
+        in_min_days = now + timezone.timedelta(days=day_min)
+        in_max_days = now + timezone.timedelta(days=day_max)
+        
+        in_min_days_start = in_min_days.replace(hour=0, minute=0, second=0, microsecond=0)
+        in_max_days_end  = in_max_days.replace(hour=23, minute=59, second=59, microsecond=999999)
+        
+        return self.filter(
+            current_period_end__gte=in_min_days_start,
+            current_period_end__lte=in_max_days_end
+        )
+
+class UserSubscriptionManager(models.Manager):
+    def get_queryset(self):
+        return UserSubscriptionQuerySet(self.model, using=self._db)
+    
+    def all_active(self):
+        return self.get_queryset().active()
+    
+    def by_user_ids(self, user_ids=None):
+        return self.get_queryset().by_user_ids(user_ids=user_ids)
+    
+    def by_days_left(self, days=7):
+        return self.get_queryset().by_days_left(days_left=days)
+
+    def by_days_ago(self, days=3):
+        return self.get_queryset().by_days_ago(days_ago=days)
+    
+class UserSubscription(models.Model):
+
+    objects = UserSubscriptionManager()
+     
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    subscription = models.ForeignKey(Subscription, on_delete=models.SET_NULL, null=True, blank=True)
+    active = models.BooleanField(default=True)
+    stripe_id = models.CharField(max_length=100, null=True, blank=True) 
+    user_cancelled = models.BooleanField(default=False)
+    current_period_start = models.DateTimeField(auto_now=False, auto_now_add=False,
+                                                null=True, blank=True)
+    current_period_end = models.DateTimeField(auto_now=False, auto_now_add=False,
+                                              null=True, blank=True)
+    cancel_at_period_end = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, default=SubscriptionStatus.ACTIVE, choices=SubscriptionStatus.choices)
+    
+    created_at = models.DateTimeField(auto_now_add=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True, editable=False)
+    
+    @property
+    def is_active_status(self):
+        return self.status in   [
+            SubscriptionStatus.ACTIVE,
+            SubscriptionStatus.TRIALING]
+    
+    @property
+    def get_cancel_url(self):
+        return reverse('cancel-subscription')
+
+    def serialize(self):
+        return {
+            "name": self.subscription.name if self.subscription else "Free Plan",
+            "stripe_id": self.stripe_id,
+            "current_period_start": self.current_period_start if self.current_period_start else None,
+            "current_period_end": self.current_period_end if self.current_period_end else None,
+            "status": self.get_status_display(),
+            'is_active_status': self.is_active_status,
+            'cancel_at_the_period': self.cancel_at_period_end,
+            'cancel_url': self.get_cancel_url
+        }
+    

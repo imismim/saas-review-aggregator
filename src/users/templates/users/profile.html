@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card shadow-sm border-0 overflow-hidden mb-4">
+        <div class="bg-primary p-5" style="height: 150px;">
+            <div class="position-absolute top-0 end-0 p-3">
+                <a href="#" class="btn btn-light btn-sm shadow-sm">
+                    <i class="bi bi-pencil"></i> Edit Profile
+                </a>
+            </div>
+        </div>
+        <div class="card-body pt-0 text-center" style="margin-top: -75px;">
+            <div class="mb-3">
+                {% if user.image %}
+                    <img src="{{ user.image.url }}" 
+                         class="rounded-circle border border-5 shadow-sm 
+                         {% if user.status == 'admin' %}border-danger
+                         {% elif user.status == 'moderator' %}border-warning
+                         {% else %}border-white{% endif %}" 
+                         style="width: 150px; height: 150px; object-fit: cover;">
+                {% else %}
+                    <div class="bg-light rounded-circle border border-5 border-white d-inline-flex align-items-center justify-content-center shadow-sm" 
+                         style="width: 150px; height: 150px;">
+                        <i class="bi bi-person text-secondary" style="font-size: 4rem;"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <h2 class="fw-bold mb-1">{{ user.get_full_name|default:user.username }}</h2>
+            <p class="text-muted mb-3">@{{ user.username }} | 
+                <span class="badge bg-secondary-subtle text-secondary border">{{ user.status|title }}</span>
+            </p>
+            
+            {% if user.bio %}
+                <p class="mx-auto" style="max-width: 600px;">{{ user.bio }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white fw-bold">Contact Information</div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="text-muted"><i class="bi bi-envelope me-2"></i> Email</span>
+                        <span>{{ user.email }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="text-muted"><i class="bi bi-telephone me-2"></i> Phone</span>
+                        <span>{{ user.phone_number|default:"Not provided" }}</span>
+                    </li>   
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="text-muted"><i class="bi bi-geo-alt me-2"></i> Address</span>
+                        <span class="text-end">{{ user.address|default:"Not provided" }}</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white fw-bold">Account Details</div>
+                <div class="card-body small">
+                    <p class="mb-0 text-muted">Joined on {{ user.date_joined|date:"F d, Y" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            {% include 'users/snippets/subscription-info.html' with sub_data=sub_data %}
+        </div>
+    </div>
+</div>
+{% endblock %}

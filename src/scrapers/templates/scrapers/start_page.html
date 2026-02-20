@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="py-5 mb-4 bg-light rounded-3 border shadow-sm">
+    <div class="container-fluid py-5 text-center">
+        <h1 class="display-5 fw-bold">Master Your Reputation</h1>
+        <p class="col-md-8 mx-auto fs-4 text-muted">
+            Review Aggregator helps you track, analyze, and respond to customer feedback 
+            from TripAdvisor and beyond in one simple dashboard.
+        </p>
+        <div class="mt-4">
+            <a href="{% url 'account_login' %}" class="btn btn-primary btn-lg px-5 shadow">
+                <i class="bi bi-rocket-takeoff-fill me-2"></i> Get Started for Free
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

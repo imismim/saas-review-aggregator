@@ -2,7 +2,12 @@
 django>=5.0
 djangorestframework
 django-cors-headers
+django-allauth[socialaccount]
+django-allauth-ui  
+django-widget-tweaks
+slippers
 python-dotenv
+whitenoise
 
 # Database
 psycopg2-binary

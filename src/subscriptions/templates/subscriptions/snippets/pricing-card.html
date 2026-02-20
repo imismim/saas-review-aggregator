@@ -1,0 +1,25 @@
+<div class="col">
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header">
+      <h4 class="my-0 fw-normal">
+        {{object.display_subscribtion_name|title}} Plan
+      </h4>
+    </div>
+    <div class="card-body">
+      <h1 class="card-title pricing-card-title">
+        {{object.price}} <small class="text-muted">/{{ object.interval}}</small>
+      </h1>
+      <ul class="list-unstyled mt-3 mb-4">
+        {% for feature in object.display_subscribtion_features %}
+        <li><i class="bi bi-check"></i>{{ feature }}</li>
+        {% endfor %}
+      </ul>
+      <a
+        href="{{ object.get_checkout_url }}"
+        class="btn btn-lg w-100 btn-primary"
+      >
+        Get Started
+      </a>
+    </div>
+  </div>
+</div>
