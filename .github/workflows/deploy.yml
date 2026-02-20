@@ -20,3 +20,4 @@ jobs:
           heroku_app_name: "reviews-aggregator"  
           dockerfile_directory: ./docker/prod
           dockerfile_name: Dockerfile
+          dontautocreate: true
