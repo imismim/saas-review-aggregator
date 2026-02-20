@@ -17,7 +17,7 @@ jobs:
         with:
           email: ${{ secrets.HEROKU_EMAIL }}
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: "reviws-aggregator"  
+          heroku_app_name: "reviews-aggregator"  
           dockerfile_directory: ./
           dockerfile_name: Dockerfile
           process_type: web
