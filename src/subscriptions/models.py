@@ -141,6 +141,20 @@ class SubscriptionStatus(models.TextChoices):
 class UserSubscriptionQuerySet(models.QuerySet):
     def active(self):
         return self.filter(Q(status=SubscriptionStatus.ACTIVE) | Q(status=SubscriptionStatus.TRIALING))
+    
+    def by_user_ids(self, user_ids=None):
+        users_qs = self
+        if isinstance(user_ids, list):
+            if user_ids != []:
+                users_qs = self.filter(user_id__in=user_ids)
+        elif isinstance(user_ids, int):
+            users_qs = self.filter(user_id=user_ids)
+        elif isinstance(user_ids, str):
+            users_qs = self.filter(user_id=int(user_ids))
+        else:
+            users_qs = self.none()
+
+        return users_qs
 
 class UserSubscriptionManager(models.Manager):
     def get_queryset(self):
@@ -148,7 +162,10 @@ class UserSubscriptionManager(models.Manager):
     
     def all_active(self):
         return self.get_queryset().active()
-
+    
+    def by_user_ids(self, user_ids=None):
+        return self.get_queryset().by_user_ids(user_ids=user_ids)
+    
 class UserSubscription(models.Model):
 
     objects = UserSubscriptionManager()

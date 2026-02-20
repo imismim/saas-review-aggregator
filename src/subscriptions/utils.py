@@ -10,23 +10,18 @@ def get_self(self=None):
     style_error = self.style.ERROR if self else lambda x: x
     return out, style_success, style_error
 
-def refresh_active_users_subscriptions(self=None, user_ids=None, all=False):
+def refresh_active_users_subscriptions(self=None, user_ids=None, only_active=False):
     
     out, style_success, style_error = get_self(self)
-    if all:
-        users_subs_qs = UserSubscription.objects.all()
-    else:   
+    if only_active:
         users_subs_qs = UserSubscription.objects.all_active()
+    else:   
+        users_subs_qs = UserSubscription.objects.all()
     
-    if isinstance(user_ids, list):
-        users_subs_qs = users_subs_qs.filter(user_id__in=user_ids)
-    elif isinstance(user_ids, int):
-        users_subs_qs = users_subs_qs.filter(user_id=user_ids)
-    elif isinstance(user_ids, str):
-        users_subs_qs = users_subs_qs.filter(user_id=int(user_ids))
+    users_subs_qs = users_subs_qs.by_user_ids(user_ids=user_ids)
     
     if not users_subs_qs.exists():  
-        out(style_error("No active subscriptions to refresh with this ids."))   
+        out(style_error("No existing subscriptions for this user ids."))   
         return False
     
     success_count = 0
