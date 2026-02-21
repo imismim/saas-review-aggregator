@@ -6,8 +6,9 @@ from .date_urils import timestamp_to_datetime
 DEBUG = settings.DEBUG
 STRIPE_SECRET_KEY = settings.STRIPE_SECRET_KEY
 
-if "sk_test" in STRIPE_SECRET_KEY and not DEBUG:
-    raise ValueError("Stripe secret key is set to test mode but DEBUG is False")
+# if "sk_test" in STRIPE_SECRET_KEY and not DEBUG:
+#     raise ValueError("Stripe secret key is set to test mode but DEBUG is False")
+#TODO dont forget to remove this check when deploying to production
 
 stripe.api_key = STRIPE_SECRET_KEY
 
