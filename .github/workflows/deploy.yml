@@ -22,4 +22,4 @@ jobs:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
           heroku_app_name: "reviews-aggregator"  
           heroku_email: ${{secrets.HEROKU_EMAIL}}
-          use_docker: true
+          usedocker: true
