@@ -43,11 +43,13 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     
     # Third-party apps
-    'rest_framework',
+    'allauth_ui',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+    "widget_tweaks",
+    "slippers",
 
     # Local apps
     'scrapers.apps.ScrapersConfig',
