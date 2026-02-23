@@ -1,0 +1,33 @@
+# Core Framework
+django>=5.0
+django-cors-headers
+django-allauth[socialaccount]
+
+# Static Files
+whitenoise
+
+# allauth-ui 
+django-allauth-ui  
+django-widget-tweaks
+slippers
+
+# Database
+psycopg2-binary
+
+# Task Queue & Background Processing
+celery
+redis
+
+# Scraping & Requests
+curl_cffi
+beautifulsoup4
+
+# Payments & Billing
+stripe
+dj-stripe  
+
+# Environment & Utilities
+python-dotenv
+django-environ
+python-decouple
+requests
