@@ -1,0 +1,47 @@
+<footer class="bg-dark text-white mt-5 pt-5 pb-3">
+    <div class="container">
+        <div class="row gy-4">
+            <!-- Brand -->
+            <div class="col-md-4">
+                <h5 class="fw-bold mb-2">Review Aggregator</h5>
+                <p class="text-secondary small mb-3">
+                    Collect, manage, and showcase customer reviews from all your platforms in one place.
+                </p>
+            </div>
+
+            <!-- Product -->
+            <div class="col-6 col-md-2">
+                <h6 class="text-uppercase fw-semibold text-secondary small mb-3">Product</h6>
+                <ul class="list-unstyled small">
+                    <li class="mb-2"><a href="{% url 'home' %}" class="text-white-50 text-decoration-none hover-text-white">Home</a></li>
+                    <li class="mb-2"><a href="{% url 'pricing' %}" class="text-white-50 text-decoration-none">Pricing</a></li>
+                </ul>
+            </div>
+
+            <!-- Account -->
+            <div class="col-6 col-md-2">
+                <h6 class="text-uppercase fw-semibold text-secondary small mb-3">Account</h6>
+                <ul class="list-unstyled small">
+                    {% if user.is_authenticated %}
+                    <li class="mb-2"><a href="{% url 'profile' %}" class="text-white-50 text-decoration-none">Profile</a></li>
+                    <li class="mb-2">
+                        <form action="{% url 'account_logout' %}" method="post" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-link text-white-50 text-decoration-none p-0 small">Sign Out</button>
+                        </form>
+                    </li>
+                    {% else %}
+                    <li class="mb-2"><a href="{% url 'account_login' %}" class="text-white-50 text-decoration-none">Sign In</a></li>
+                    <li class="mb-2"><a href="{% url 'account_signup' %}" class="text-white-50 text-decoration-none">Sign Up</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+
+        <hr class="border-secondary mt-4 mb-3">
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center small text-secondary">
+            <span>&copy; {% now "Y" %} Review Aggregator. All rights reserved.</span>
+        </div>
+    </div>
+</footer>

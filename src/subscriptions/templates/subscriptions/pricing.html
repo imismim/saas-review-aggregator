@@ -1,29 +1,131 @@
-{% extends 'base.html' %} {% block title %}Pricing - {{block.super}} {% endblock title %}
+{% extends 'base.html' %}
+{% block title %}Pricing - {{ block.super }}{% endblock %}
+
 {% block content %}
-<div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
-  <h1 class="display-4">Pricing</h1>
-  <p class="lead">
-    Quickly build an effective pricing table for your potential customers with
-    this Bootstrap example. It's built with default Bootstrap components and
-    utilities with little customization.
-  </p>
+
+<!-- Header -->
+<div class="text-center py-5 mb-2">
+    <h1 class="display-5 fw-bold mb-2">Simple, transparent pricing</h1>
+    <p class="text-muted fs-5 col-md-6 mx-auto">
+        One plan for every stage of your business. No hidden fees, no surprises.
+    </p>
+
+    <!-- Billing toggle -->
+    <div class="d-inline-flex align-items-center gap-2 mt-3 bg-light border rounded-pill px-4 py-2">
+        <a href="{{ monthly_url }}"
+            class="text-decoration-none fw-semibold {% if active == 'month' %}text-primary{% else %}text-muted{% endif %}">
+            Monthly
+        </a>
+        <div class="form-check form-switch mb-0 mx-1">
+            <input class="form-check-input" type="checkbox" role="switch" id="billingToggle"
+                {% if active == 'year' %}checked{% endif %}
+                onchange="window.location.href = this.checked ? '{{ yearly_url }}' : '{{ monthly_url }}'">
+        </div>
+        <a href="{{ yearly_url }}"
+            class="text-decoration-none fw-semibold {% if active == 'year' %}text-primary{% else %}text-muted{% endif %}">
+            Yearly
+        </a>
+        {% if active == 'year' %}
+            <span class="badge bg-success ms-1">Save up to 20%</span>
+        {% else %}
+            <span class="badge bg-secondary ms-1 opacity-50">Save up to 20% yearly</span>
+        {% endif %}
+    </div>
 </div>
 
-<div class="container">
-  <ul class="nav nav-pills justify-content-center mb-3">
-    <li class="nav-item">
-      <a class="nav-link {% if active == 'month' %}active{% endif %}" aria-current="page" href="{{ monthly_url }}">Monthly</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if active == 'year' %}active{% endif %}" href="{{ yearly_url }}">Yearly</a>
-    </li>
-  </ul>
-  <br>
-  <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
+<!-- Pricing cards -->
+<div class="row row-cols-1 row-cols-md-3 mb-5 g-4 justify-content-center">
     {% for price_object in object_qs %}
-      {% include 'subscriptions/snippets/pricing-card.html' with object=price_object %}
+        {% include 'subscriptions/snippets/pricing-card.html' with object=price_object counter=forloop.counter total=object_qs.count %}
+    {% empty %}
+        <div class="col-12 text-center text-muted py-5">
+            <i class="bi bi-exclamation-circle display-4"></i>
+            <p class="mt-3">No pricing plans available right now. Check back soon.</p>
+        </div>
     {% endfor %}
-  </div>
 </div>
-  {% endblock content %}
+
+<!-- Trust signals -->
+<div class="row text-center mb-5 g-4">
+    <div class="col-md-4">
+        <i class="bi bi-shield-lock-fill display-6 text-success mb-2"></i>
+        <h6 class="fw-bold">Secure payments</h6>
+        <p class="text-muted small">Powered by Stripe. Your card details are never stored on our servers.</p>
+    </div>
+    <div class="col-md-4">
+        <i class="bi bi-arrow-repeat display-6 text-primary mb-2"></i>
+        <h6 class="fw-bold">Cancel anytime</h6>
+        <p class="text-muted small">No lock-in contracts. Cancel with one click and keep access until period end.</p>
+    </div>
+    <div class="col-md-4">
+        <i class="bi bi-headset display-6 text-warning mb-2"></i>
+        <h6 class="fw-bold">Priority support</h6>
+        <p class="text-muted small">Paid plans include priority email support with responses within 24 hours.</p>
+    </div>
 </div>
+
+<!-- FAQ -->
+<div class="col-md-8 mx-auto mb-5">
+    <h3 class="fw-bold text-center mb-4">Frequently asked questions</h3>
+    <div class="accordion" id="pricingFAQ">
+
+        <div class="accordion-item border mb-2 rounded">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold rounded" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#faq1">
+                    Can I switch plans later?
+                </button>
+            </h2>
+            <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#pricingFAQ">
+                <div class="accordion-body text-muted small">
+                    Yes. You can upgrade or downgrade at any time. Changes take effect at the start of your next billing cycle.
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border mb-2 rounded">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold rounded" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#faq2">
+                    Is there a free trial?
+                </button>
+            </h2>
+            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#pricingFAQ">
+                <div class="accordion-body text-muted small">
+                    We offer a free forever plan with limited features. No credit card required to get started.
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border mb-2 rounded">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold rounded" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#faq3">
+                    What payment methods do you accept?
+                </button>
+            </h2>
+            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#pricingFAQ">
+                <div class="accordion-body text-muted small">
+                    We accept all major credit and debit cards (Visa, Mastercard, Amex) via Stripe.
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion-item border rounded">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold rounded" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#faq4">
+                    What happens when I cancel?
+                </button>
+            </h2>
+            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#pricingFAQ">
+                <div class="accordion-body text-muted small">
+                    You keep full access until the end of your current billing period. After that your account reverts to the free plan.
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

@@ -1,25 +1,53 @@
+{% with is_popular=counter|default:0 %}
 <div class="col">
-  <div class="card mb-4 shadow-sm">
-    <div class="card-header">
-      <h4 class="my-0 fw-normal">
-        {{object.display_subscribtion_name|title}} Plan
-      </h4>
+    <div class="card h-100 shadow-sm {% if counter == 2 %}border-primary border-2{% else %}border{% endif %} position-relative">
+
+        {% if counter == 2 %}
+        <div class="position-absolute top-0 start-50 translate-middle">
+            <span class="badge bg-primary px-3 py-2 rounded-pill shadow-sm">
+                <i class="bi bi-star-fill me-1"></i> Most Popular
+            </span>
+        </div>
+        {% endif %}
+
+        <div class="card-header text-center {% if counter == 2 %}bg-primary text-white{% else %}bg-light{% endif %} py-3 border-0">
+            <h5 class="fw-bold mb-0">{{ object.display_subscribtion_name|title }}</h5>
+        </div>
+
+        <div class="card-body d-flex flex-column p-4">
+            <!-- Price -->
+            <div class="text-center mb-4">
+                <span class="display-5 fw-bold">${{ object.price|floatformat:0 }}</span>
+                <span class="text-muted fs-6"> / {{ object.interval }}</span>
+                {% if object.interval == 'year' %}
+                <div class="text-success small mt-1">
+                    <i class="bi bi-piggy-bank-fill me-1"></i> Billed annually
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Features -->
+            <ul class="list-unstyled mb-4 flex-grow-1">
+                {% for feature in object.display_subscribtion_features %}
+                <li class="d-flex align-items-start gap-2 mb-2">
+                    <i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i>
+                    <span class="small">{{ feature }}</span>
+                </li>
+                {% empty %}
+                <li class="text-muted small text-center">No features listed.</li>
+                {% endfor %}
+            </ul>
+
+            <!-- CTA -->
+            <a href="{{ object.get_checkout_url }}"
+                class="btn btn-lg w-100 {% if counter == 2 %}btn-primary{% else %}btn-outline-primary{% endif %} fw-semibold">
+                {% if counter == 2 %}
+                    <i class="bi bi-rocket-takeoff-fill me-1"></i> Get Started
+                {% else %}
+                    Choose Plan
+                {% endif %}
+            </a>
+        </div>
     </div>
-    <div class="card-body">
-      <h1 class="card-title pricing-card-title">
-        {{object.price}} <small class="text-muted">/{{ object.interval}}</small>
-      </h1>
-      <ul class="list-unstyled mt-3 mb-4">
-        {% for feature in object.display_subscribtion_features %}
-        <li><i class="bi bi-check"></i>{{ feature }}</li>
-        {% endfor %}
-      </ul>
-      <a
-        href="{{ object.get_checkout_url }}"
-        class="btn btn-lg w-100 btn-primary"
-      >
-        Get Started
-      </a>
-    </div>
-  </div>
 </div>
+{% endwith %}

@@ -15,108 +15,21 @@
         </title>
         {% block extra_head %}
             <link rel="stylesheet" href="{% static 'allauth_ui/output.css' %}">
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-            <link rel="stylesheet" href="{% static 'css/base.css' %}">
         {% endblock extra_head %}
     </head>
-    <body class="min-h-screen bg-base-300">
+    <body class="min-h-screen bg-base-300 flex flex-col">
         {% block body %}
-            <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow-sm sticky-top">
-                <div class="container">
-                    <a class="navbar-brand text-white text-decoration-none" href="{% url 'home' %}">Review Aggregator</a>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-
-                    <div class="collapse navbar-collapse" id="navbarNav">
-
-                        <ul class="navbar-nav ms-auto align-items-center">
-                            <li class="nav-item dropdown">
-                                <a class="nav-link" href="{% url 'pricing' %}" id="pricingDrop" role="button">Pricing</a>
-                            </li>
-                            {% if user.is_authenticated %}
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-menu-end d-flex align-items-center gap-2" href="#" id="userDrop"
-                                    data-bs-toggle="dropdown" aria-expanded="false">
-                                    {% if user.image %}
-                                    <img src="" 
-                                    class="rounded-circle border border-5 shadow-sm 
-                                    {% if user.status == 'admin' %}border-danger
-                                    {% elif user.status == 'moderator' %}border-warning
-                                    {% else %}border-white{% endif %}" 
-                                    style="width: 40px; height: 40px; object-fit: cover;">
-                                    {% else %}
-                                    {{ user.username }}
-                                    {% endif %}
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item" href="{% url 'profile' %}">Profile</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <form action="{% url 'account_logout' %}" method="post">
-                                        {% csrf_token %}
-                                        <li><button class="dropdown-item" type="submit">Logout</button></li>
-                                    </form>
-                                </ul>
-                            </li>
-                            {% else %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'account_login' %}">Login</a>
-                            </li>
-                            {% endif %}
-                        </ul>
-                    </div>
-                </div>
-            </nav>
-            <div class="container">
-                {% if messages %}
-                    {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} message-alert">
-                        {{ message }}
-                    </div>
-                    {% endfor %}
-                {% endif %}
-            </div>
+            {% block extra_body %}
+            {% endblock extra_body %}
+            <div class="flex-1">
             {% block content %}
             {% endblock content %}
-            <div class="mx-auto [&_a]:link text-sm flex flex-col md:flex-row items-center justify-center gap-3 mt-3">
-                {% if user.is_authenticated %}
-                    {% url 'account_email' as email_url %}
-                    {% if email_url %}
-                        <a href="{{ email_url }}">{% trans "Change Email" %}</a>
-                    {% endif %}
-                    {% url 'account_change_password' as change_password_url %}
-                    {% if change_password_url %}
-                        <a href="{{ change_password_url }}">{% trans "Change Password" %}</a>
-                    {% endif %}
-                    {% url 'mfa_index' as mfa_url %}
-                    {% if mfa_url %}
-                        <a href="{{ mfa_url }}">{% trans "Two-Factor Authentication" %}</a>
-                    {% endif %}
-                    {% url 'usersessions_list' as usersessions_list_url %}
-                    {% if usersessions_list_url %}
-                        <a href="{{ usersessions_list_url }}">{% trans "Sessions" %}</a>
-                    {% endif %}
-                    {% url 'account_logout' as logout_url %}
-                    {% if logout_url %}
-                        <a href="{{ logout_url }}">{% trans "Sign Out" %}</a>
-                    {% endif %}
-                {% else %}
-                    {% url 'account_login' as login_url %}
-                    {% if login_url %}
-                        <a href="{{ login_url }}">{% trans "Sign In" %}</a>
-                    {% endif %}
-                    {% url 'account_signup' as signup_url %}
-                    {% if signup_url %}
-                        <a href="{{ signup_url }}">{% trans "Sign Up" %}</a>
-                    {% endif %}
-                {% endif %}
-            </div>
+    
+            {% block footer %}
+            {% endblock footer %}
+    
+            {% block extra_scripts %}
+            {% endblock extra_scripts %}
         {% endblock body %}
-        {% block extra_body %}
-        {% endblock extra_body %}
-        {% block js %}{% endblock %}
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="{% static 'js/alerts.js' %}"></script>
     </body>
 </html>

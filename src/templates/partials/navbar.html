@@ -1,0 +1,85 @@
+{% with url_name=request.resolver_match.url_name %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top">
+    <div class="container">
+
+        <!-- Brand -->
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="{% url 'home' %}">
+            <i class="bi bi-star-fill text-warning"></i> Review Aggregator
+        </a>
+
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link {% if url_name == 'pricing' or url_name == 'pricing-interval' %}active{% endif %}"
+                        href="{% url 'pricing' %}">Pricing</a>
+                </li>
+            </ul>
+
+            <ul class="navbar-nav ms-auto align-items-center gap-1">
+                {% if user.is_authenticated %}
+
+                <!-- Authenticated: user dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center gap-2"
+                        id="userDrop" href="#" role="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        {% if user.image %}
+                            <img src="{{ user.image.url }}"
+                                alt="{{ user.username }}"
+                                class="rounded-circle border border-2 shadow-sm
+                                    {% if user.status == 'admin' %}border-danger
+                                    {% elif user.status == 'moderator' %}border-warning
+                                    {% else %}border-secondary{% endif %}"
+                                style="width:36px;height:36px;object-fit:cover;">
+                        {% else %}
+                            <span class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center fw-bold text-white"
+                                style="width:36px;height:36px;font-size:.9rem;">
+                                {{ user.username|first|upper }}
+                            </span>
+                        {% endif %}
+                        <span class="d-none d-lg-inline text-white-50 small">{{ user.username }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="{% url 'profile' %}">
+                                <i class="bi bi-person-circle text-secondary"></i> Profile
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form action="{% url 'account_logout' %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit"
+                                    class="dropdown-item d-flex align-items-center gap-2 text-danger">
+                                    <i class="bi bi-box-arrow-right"></i> Sign Out
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+
+                {% else %}
+
+                <!-- Guest: login link + sign-up button -->
+                <li class="nav-item">
+                    <a class="nav-link {% if url_name == 'account_login' %}active{% endif %}"
+                        href="{% url 'account_login' %}">Login</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'account_signup' %}"
+                        class="btn btn-primary btn-sm px-3 ms-1">
+                        <i class="bi bi-person-plus-fill me-1"></i> Sign Up
+                    </a>
+                </li>
+
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+{% endwith %}
