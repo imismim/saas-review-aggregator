@@ -44,7 +44,6 @@ INSTALLED_APPS = [
     
     # Third-party apps
     'allauth_ui',
-    'rest_framework',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
