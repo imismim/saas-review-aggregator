@@ -41,4 +41,4 @@ jobs:
       - name: Collect Static Files
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: heroku run python manage.py collectstatic --noinput --app ${{ secrets.HEROKU_APP_NAME }}
+        run: heroku run python manage.py collectstatic --no-input --app ${{ secrets.HEROKU_APP_NAME }}
