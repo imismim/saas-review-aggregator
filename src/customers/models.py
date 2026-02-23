@@ -24,5 +24,9 @@ class Customer(models.Model):
 
         super().save(*args, **kwargs)
 
+    @property
+    def user_id(self):
+        return self.user.id
+    
     def __str__(self):
         return f"{self.user.username}"
