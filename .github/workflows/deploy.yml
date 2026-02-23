@@ -36,9 +36,9 @@ jobs:
       - name: Run Migrations
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: heroku run python manage.py migrate --app ${{ secrets.HEROKU_APP_NAME }}
+        run: heroku run python src/manage.py migrate --app ${{ secrets.HEROKU_APP_NAME }}
 
       - name: Collect Static Files
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: heroku run "python manage.py collectstatic --noinput" --app ${{ secrets.HEROKU_APP_NAME }}
+        run: heroku run "python src/manage.py collectstatic --noinput" --app ${{ secrets.HEROKU_APP_NAME }}
