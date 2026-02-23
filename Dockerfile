@@ -19,4 +19,4 @@ COPY . /app/
 
 RUN mkdir -p /app/staticfiles
 
-CMD ["sh", "-c", "gunicorn --chdir src deploy_dj.wsgi:application --bind 0.0.0.0:$PORT"]
+CMD ["sh", "-c", "gunicorn --chdir src reviewaggregator.wsgi:application --bind 0.0.0.0:$PORT"]
