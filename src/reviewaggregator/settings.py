@@ -10,6 +10,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
+import dj_database_url
 from datetime import timedelta
 from decouple import config
 from django.contrib.messages import constants as messages
@@ -137,18 +138,14 @@ SOCIALACCOUNT_PROVIDERS = {
 #     }
 # }
 
-DATABASE_URL = config('DATABASE_URL_PROD') if not DEBUG else config('DATABASE_URL_DEV')
-url = urlparse(DATABASE_URL)
+DATABASE_URL = config('DATABASE_URL_PROD', default='') if not DEBUG else config('DATABASE_URL_DEV', default='')
 
 DATABASES = {
-    'default': {
-        'ENGINE': config('DB_ENGINE'),
-        'NAME': url.path[1:], 
-        'USER': url.username,
-        'PASSWORD': url.password,
-        'HOST': url.hostname,
-        'PORT': url.port,
-    }
+    'default': dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=600,
+        ssl_require=True
+    )
 }
 
 
@@ -196,7 +193,7 @@ STATIC_ROOT = BASE_DIR.parent / "staticfiles"
 
 STORAGES = {
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
 
@@ -229,7 +226,7 @@ MESSAGE_TAGS = {
     messages.ERROR: 'danger',
 }
 
-if not DEBUG:
+if 'herokuapp.com' in config('HTTP_HOST', ''):
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True

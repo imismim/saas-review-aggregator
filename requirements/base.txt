@@ -1,6 +1,7 @@
 # Core Framework
 django>=5.0
 django-cors-headers
+dj_database_url
 django-allauth[socialaccount]
 
 # Static Files
