@@ -3,18 +3,11 @@ from allauth.account.signals import (
     email_confirmed
 )
 from django.dispatch import receiver
-
-from reviewaggregator.constants import (
-    WELCOME_EMAIL_SUBJECT,
-    WELCOME_EMAIL_MESSAGE
-)
-
 from .models import Customer
 
 @receiver(user_signed_up)
 def user_signed_up_handler(sender, request, user, *args, **kwargs):
     from allauth.account.models import EmailAddress
-    from users.tasks import send_welcome_email
 
     email = user.email
     is_verified = EmailAddress.objects.filter(
@@ -40,8 +33,8 @@ def email_confirmed_handler(sender, request, email_address, *args, **kwargs):
         
         user_id = customer.user_id
 
-    from reviewaggregator.constants import WELCOME_EMAIL_SUBJECT, WELCOME_EMAIL_MESSAGE
     from users.tasks import send_welcome_email
-    send_welcome_email.delay(user_id, subject=WELCOME_EMAIL_SUBJECT, message=WELCOME_EMAIL_MESSAGE)
+    
+    send_welcome_email.delay(user_id=user_id)
       
   
