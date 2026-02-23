@@ -32,3 +32,6 @@ python-dotenv
 django-environ
 python-decouple
 requests
+
+#logging
+sentry-sdk

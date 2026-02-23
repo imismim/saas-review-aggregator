@@ -15,6 +15,9 @@ from datetime import timedelta
 from decouple import config
 from django.contrib.messages import constants as messages
 from urllib.parse import urlparse
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.celery import CeleryIntegration
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -205,7 +208,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CELERY_BROKER_URL = config('CELERY_BROKER_URL')
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = config('EMAIL_HOST', )
@@ -237,3 +239,16 @@ else:
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
+    
+sentry_sdk.init(
+    dsn=config('SENTRY_DSN', default=''),
+    integrations=[
+        DjangoIntegration(),
+        CeleryIntegration(),  
+    ],
+    traces_sample_rate=1.0,
+    send_default_pii=True,
+    environment='production' if not DEBUG else 'development',
+)
+
+BASE_DIR = Path(__file__).resolve().parent.parent
