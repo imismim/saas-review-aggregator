@@ -26,6 +26,26 @@ services:
   #   env_file:
   #     - .env
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+  
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: worker-1
+    command: celery --workdir src -A reviewaggregator worker --loglevel=info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - PYTHONPATH=/app/src
   web:
     build: 
       context: .
@@ -34,31 +54,17 @@ services:
     command: python manage.py runserver 0.0.0.0:8000
     ports:
       - "8000:8000"
-    # depends_on:
-    #   - db
-    #   - rabbitmq
+    depends_on:
+      - redis
     volumes:
       - ./src:/app
       - media_volume:/app/media
       - static_volume:/app/staticfiles
     env_file:
       - .env
-
-  # worker:
-  #   build: .
-  #   container_name: worker-1
-  #   command: celery -A reviewaggregator worker --loglevel=info
-  #   volumes:
-  #     - ./src:/app
-  #     - media_volume:/app/media
-  #   depends_on:
-  #     - db
-  #     - rabbitmq
-  #   env_file:
-  #     - .env
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
 
 volumes:
-  # postgres_data:
-  # rabbitmq_data:
   media_volume:
   static_volume:
