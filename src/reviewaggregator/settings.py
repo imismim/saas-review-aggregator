@@ -293,6 +293,16 @@ LOGGING = {
             'level': 'WARNING',
             'propagate': False,
         },
+        'celery': {
+            'handlers': ['console'],
+            'level': 'INFO', 
+            'propagate': False,
+        },
+        'celery.task': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
     },
     
     'root': {

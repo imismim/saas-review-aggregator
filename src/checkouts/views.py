@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
+import logging
 
 from subscriptions.models import SubscriptionPrice, Subscription, UserSubscription
 from helpers.billing import (start_checkout_session,
@@ -15,8 +16,9 @@ from checkouts.tasks import send_greating_updated_plan
 # Create your views here.
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
-
+@login_required
 def product_price_redirect_view(request, price_id=None, *args, **kwargs):
     request.session['checkout_subscription_price_id'] = price_id
     return redirect('stripe-checkout-start')
@@ -46,9 +48,13 @@ def checkout_redirect_view(request):
     )
     return redirect(url)
 
-
+@login_required
 def checkout_finalize_view(request):
     session_id = request.GET.get("session_id")
+    if session_id is None:
+        logger.warning(f"Session id not found in request. {request.GET}")
+        return redirect('pricing')
+    
     checkout_data = get_checkout_customer_plan(session_id=session_id)
 
     customer_id = checkout_data.pop("customer_id")
@@ -60,7 +66,11 @@ def checkout_finalize_view(request):
         sub_obj = Subscription.objects.get(
             subscriptionprice__stripe_id=plan_id)
         user_obj = User.objects.get(customer__stripe_id=customer_id)
-    except:
+    except Subscription.DoesNotExist:
+        logger.error(f"Subscription not found for plan_id: {plan_id}")
+        return HttpResponse("Required data not found.")
+    except User.DoesNotExist:
+        logger.error(f"User not found for customer_id: {customer_id}")
         return HttpResponse("Required data not found.")
 
     user_sub_qs = UserSubscription.objects.filter(user=user_obj)
@@ -81,8 +91,10 @@ def checkout_finalize_view(request):
             if old_sub_status in ["active", "trialing"]:
                 cancel_subscription(stripe_id=old_stripe_id,
                                     reason="update_subscription", raw=False)
-        except:
-            return HttpResponse("Could not     old subscription. Please contact support.")
+                logger.info(f"Cancelled old subscription: {old_stripe_id}")
+        except Exception as e:
+            logger.error(f"Failed to cancel old subscription: {e}")
+            return HttpResponse("Could not cancel old subscription. Please contact support.")
 
     context = {
         "subscription": sub_obj,
@@ -91,5 +103,7 @@ def checkout_finalize_view(request):
     send_greating_updated_plan.delay(username=user_obj.username,
                                      user_email=user_obj.email,
                                      plan_name=sub_obj.name)
+    
+    logger.info(f"Checkout complete for user: {user_obj.username} plan: {sub_obj.name}")
 
     return render(request, 'checkouts/success.html', context=context)
