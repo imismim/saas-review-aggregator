@@ -44,7 +44,5 @@ def change_featured_status(sender, instance, **kwargs):
         )
         
     for sub_price in subscription_prices:
-        print(sub_price)
         sub_price.featured = False
-        print('feature', sub_price.featured)
         sub_price.save()
