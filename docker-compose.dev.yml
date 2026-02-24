@@ -44,7 +44,7 @@ services:
     depends_on:
       - redis
     environment:
-      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_BROKER_URL=${REDIS_URL}
       - PYTHONPATH=/app/src
   web:
     build: 
@@ -63,7 +63,7 @@ services:
     env_file:
       - .env
     environment:
-      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_BROKER_URL=${REDIS_URL}
 
 volumes:
   media_volume:

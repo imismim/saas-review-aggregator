@@ -16,6 +16,7 @@ from decouple import config
 from django.contrib.messages import constants as messages
 from urllib.parse import urlparse
 import sentry_sdk
+import ssl
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
 
@@ -184,8 +185,6 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.0/howto/static-files/
-
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
@@ -209,13 +208,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Celery Settings
-CELERY_BROKER_URL = config("CELERY_BROKER_URL")
-CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND")
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = TIME_ZONE
+REDIS_URL = config("REDIS_URL", default='redis://localhost:6379/0')
 
+# Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = config('EMAIL_HOST', )
 EMAIL_PORT = config('EMAIL_PORT', cast=int)
@@ -227,6 +222,7 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default=None)
 
 
+# Django messages framework settings
 MESSAGE_TAGS = {
     messages.DEBUG: 'secondary',
     messages.INFO: 'info',
@@ -235,6 +231,7 @@ MESSAGE_TAGS = {
     messages.ERROR: 'danger',
 }
 
+# security settings
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
@@ -247,6 +244,7 @@ else:
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
     
+# Sentry configuration
 sentry_sdk.init(
     dsn=config('SENTRY_DSN', default=''),
     integrations=[
