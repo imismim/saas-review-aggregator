@@ -1,18 +1,14 @@
 name: Deploy to Heroku
 
 on:
-  push:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - main
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-      APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,23 +19,38 @@ jobs:
         run: curl https://cli-assets.heroku.com/install.sh | sh
 
       - name: Log in to Heroku
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: heroku container:login
 
-      - name: Build and Push Web Image
+      - name: Build and Push Docker Image
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: heroku container:push web --app ${{ secrets.HEROKU_APP_NAME }}
+
+      - name: Release Image
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: heroku container:release web --app ${{ secrets.HEROKU_APP_NAME }}
+
+      - name: Build and Push Docker Worker Images
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
-          docker build -f Dockerfile -t registry.heroku.com/$APP_NAME/web .
-          docker push registry.heroku.com/$APP_NAME/web
+          heroku container:push web worker --app ${{ secrets.HEROKU_APP_NAME }}
 
-      - name: Build and Push Worker Image
+      - name: Release Images Worker
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
-          docker build -f Dockerfile.worker -t registry.heroku.com/$APP_NAME/worker .
-          docker push registry.heroku.com/$APP_NAME/worker
-
-      - name: Release Images
-        run: heroku container:release web worker --app $APP_NAME
-
+          heroku container:release web worker --app ${{ secrets.HEROKU_APP_NAME }}
       - name: Run Migrations
-        run: heroku run python src/manage.py migrate --app $APP_NAME
+
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: heroku run python src/manage.py migrate --app ${{ secrets.HEROKU_APP_NAME }}
 
       - name: Collect Static Files
-        run: heroku run "python src/manage.py collectstatic --noinput" --app $APP_NAME
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: heroku run "python src/manage.py collectstatic --noinput" --app ${{ secrets.HEROKU_APP_NAME }}
