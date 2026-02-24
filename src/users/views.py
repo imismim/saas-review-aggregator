@@ -1,6 +1,8 @@
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages as message
+from django.shortcuts import redirect
+from django.urls import reverse
 
 from subscriptions.models import UserSubscription
 from helpers.billing import get_subscription
@@ -28,6 +30,7 @@ class ProfileView(LoginRequiredMixin, TemplateView):
         else:
             message.error(request, "Failed to refresh subscription.")
             
-        return self.get(request, *args, **kwargs)
+        return redirect('profile')
 
 profile_view = ProfileView.as_view()
+

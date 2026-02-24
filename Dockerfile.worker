@@ -18,10 +18,8 @@ RUN pip install --upgrade pip && \
 
 COPY . /app/
 
-RUN mkdir -p /app/staticfiles
-
 # create non-root user
 RUN useradd -m appuser && chown -R appuser /app
 USER appuser
 
-CMD ["sh", "-c", "gunicorn --chdir src reviewaggregator.wsgi:application --bind 0.0.0.0:$PORT"]
+CMD ["celery", "-A", "reviewaggregator", "worker", "--loglevel=info"]

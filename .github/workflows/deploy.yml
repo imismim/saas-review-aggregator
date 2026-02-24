@@ -1,9 +1,9 @@
 name: Deploy to Heroku
 
 on:
-  push:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - main
   workflow_dispatch:
 
 jobs:
@@ -33,7 +33,19 @@ jobs:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: heroku container:release web --app ${{ secrets.HEROKU_APP_NAME }}
 
+      - name: Build and Push Docker Worker Images
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          heroku container:push web worker --app ${{ secrets.HEROKU_APP_NAME }}
+
+      - name: Release Images Worker
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          heroku container:release web worker --app ${{ secrets.HEROKU_APP_NAME }}
       - name: Run Migrations
+
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: heroku run python src/manage.py migrate --app ${{ secrets.HEROKU_APP_NAME }}

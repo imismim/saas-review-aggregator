@@ -15,6 +15,10 @@ from datetime import timedelta
 from decouple import config
 from django.contrib.messages import constants as messages
 from urllib.parse import urlparse
+import sentry_sdk
+import ssl
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.celery import CeleryIntegration
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -181,8 +185,6 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.0/howto/static-files/
-
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
@@ -205,8 +207,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CELERY_BROKER_URL = config('CELERY_BROKER_URL')
+# Celery Settings
+REDIS_URL = config("REDIS_URL", default='redis://localhost:6379/0')
 
+# Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = config('EMAIL_HOST', )
 EMAIL_PORT = config('EMAIL_PORT', cast=int)
@@ -218,6 +222,7 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default=None)
 
 
+# Django messages framework settings
 MESSAGE_TAGS = {
     messages.DEBUG: 'secondary',
     messages.INFO: 'info',
@@ -226,6 +231,7 @@ MESSAGE_TAGS = {
     messages.ERROR: 'danger',
 }
 
+# security settings
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
@@ -237,3 +243,60 @@ else:
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
+    
+# Sentry configuration
+sentry_sdk.init(
+    dsn=config('SENTRY_DSN', default=''),
+    integrations=[
+        DjangoIntegration(),
+        CeleryIntegration(),  
+    ],
+    traces_sample_rate=1.0,
+    send_default_pii=True,
+    environment='production' if not DEBUG else 'development',
+)
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    
+    'formatters': {
+        'simple': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'urllib3': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'sentry_sdk': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+    },
+    
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG' if DEBUG else 'INFO',
+    },
+}
