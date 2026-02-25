@@ -8,3 +8,8 @@ PLAN_EMAIL_MESSAGE = lambda username, plan_name: f"""Hi {username},\n\nYour Revi
                                     \n\nYou can now enjoy the benefits of your new plan and continue tracking and aggregating reviews for your SaaS products.
                                     \n\nIf you have any questions or need assistance, feel free to reach out to our support team.
                                     \n\n— The Review Aggregator Team"""
+                                    
+CANCEL_EMAIL_SUBJECT = "Your Review Aggregator Subscription was Canceled"
+CANCEL_EMAIL_MESSAGE = lambda username: f"""Hi {username},\n\nWe're sorry to see you go. Your Review Aggregator subscription has been canceled. 
+                                    \n\nIf you have any feedback or if there's anything we can do to improve our service, please let us know. 
+                                    \n\nWe hope to see you back in the future!\n\n— The Review Aggregator Team"""

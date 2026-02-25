@@ -9,7 +9,7 @@ import json
 
 from subscriptions.models import UserSubscription, Subscription
 from helpers.billing import serialize_subscription_data_from_webhook
-from .tasks import send_greating_updated_plan
+from .tasks import send_greating_updated_plan, send_cancellation_email
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -18,31 +18,35 @@ User = get_user_model()
 def handle_subscription_created(sub_data):
     stripe_id = sub_data.get('id')
     customer_id = sub_data.get('customer')
-
+        
+    if not stripe_id:
+        logger.warning("subscription.created: no stripe_id in event data")
+        return
+    
     try:
         user = User.objects.get(customer__stripe_id=customer_id)
+    
+        user_sub_data = serialize_subscription_data_from_webhook(sub_data)
+        product_id = user_sub_data.get('product_id')
+    
+        sub = Subscription.objects.get(stripe_id=product_id)
+        _, created = UserSubscription.objects.update_or_create(
+            user=user,
+            defaults={
+                "subscription": sub
+                **user_sub_data,
+            }
+        )
+        
+        logger.info(f"subscription.created: {stripe_id} user={user.username} created={created}")
     except User.DoesNotExist:
         logger.warning(f"subscription.created: user not found for customer: {customer_id}")
         return
-    
-    user_sub_data = serialize_subscription_data_from_webhook(sub_data)
-    product_id = user_sub_data.get('product_id')
-    
-    try:
-        sub = Subscription.objects.get(stripe_id=product_id)
     except Subscription.DoesNotExist:
         logger.warning(f"subscription.created: subscription not found for product_id: {product_id}")
         return
     
-    _, created = UserSubscription.objects.update_or_create(
-        user=user,
-        defaults={
-            "subscription": sub
-            **user_sub_data,
-        }
-    )
     
-    logger.info(f"subscription.created: {stripe_id} user={user.username} created={created}")
     
 def handle_subscription_updated(sub_data):
     stripe_id = sub_data.get('id')
@@ -54,38 +58,64 @@ def handle_subscription_updated(sub_data):
     
     try:
         user = User.objects.get(customer__stripe_id=customer_id)
+        
+        user_sub_data = serialize_subscription_data_from_webhook(sub_data)
+        product_id = user_sub_data.get('product_id')
+
+        sub = Subscription.objects.get(stripe_id=product_id)
+        user_sub_obj, _ = UserSubscription.objects.update_or_create(
+            user=user,
+            defaults={
+                "subscription": sub,    
+                **user_sub_data
+            }
+        )
+        username = user.username
+        user_email = user.email
+        plan_name = sub.name
+        
+        send_greating_updated_plan.delay(username, user_email, plan_name)
+        
+        logger.info(f"subscription.updated: stripe_id={stripe_id} status={user_sub_obj.status}")
     except User.DoesNotExist:
         logger.warning(f"subscription.updated: user not found for customer: {customer_id}")
         return
-        
-    user_sub_data = serialize_subscription_data_from_webhook(sub_data)
-    product_id = user_sub_data.get('product_id')
-    
-    try:
-        sub = Subscription.objects.get(stripe_id=product_id)
     except Subscription.DoesNotExist:
         logger.warning(f"subscription.updated: subscription not found for product_id: {product_id}")
         return
     
-    user_sub_obj, _ = UserSubscription.objects.update_or_create(
-        user=user,
-        defaults={
-            "subscription": sub,    
-            **user_sub_data
-        }
-    )
-    username = user.username
-    user_email = user.email
-    plan_name = sub.name
     
-    send_greating_updated_plan.delay(username, user_email, plan_name)
-    
-    logger.info(f"subscription.updated: stripe_id={stripe_id} status={user_sub_obj.status}")
 
     
 
 def handle_subscription_deleted(sub_data):
-    ...
+    stripe_id = sub_data.get('id')
+    
+    if not stripe_id:
+        logger.warning("subscription.deleted: no stripe_id in event data")
+        return
+    
+    try:
+        user_sub_data = serialize_subscription_data_from_webhook(sub_data)
+        user_sub = UserSubscription.objects.get(stripe_id=stripe_id)
+        
+        for k, v in user_sub_data.items():
+            if hasattr(user_sub, k):
+                setattr(user_sub, k, v)
+        user_sub.save()
+        
+        logger.info(f"subscription.deleted: {stripe_id}")
+        
+        username = user_sub.user.username
+        user_email = user_sub.user.email
+        
+        send_cancellation_email.delay(
+            username=username,
+            user_email=user_email
+        )
+    except UserSubscription.DoesNotExist:
+        logger.warning(f"subscription.deleted: not found {stripe_id}")
+        return
 
 def handle_payment_failed(invoice_data):
     ...
