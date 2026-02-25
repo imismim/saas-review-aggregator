@@ -7,9 +7,9 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 import json
 
-from subscriptions.models import UserSubscription, Subscription
+from subscriptions.models import UserSubscription, Subscription, SubscriptionStatus
 from helpers.billing import serialize_subscription_data_from_webhook, cancel_subscription
-from .tasks import send_greating_updated_plan, send_cancellation_email
+from .tasks import send_greating_updated_plan, send_cancellation_email, send_payment_failed_email
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -33,7 +33,7 @@ def handle_subscription_created(sub_data):
         _, created = UserSubscription.objects.update_or_create(
             user=user,
             defaults={
-                "subscription": sub
+                "subscription": sub,
                 **user_sub_data,
             }
         )
@@ -72,7 +72,7 @@ def handle_subscription_updated(sub_data):
                 **user_sub_data
             }
         )
-        
+        cancel_at_period_end = user_sub_obj.cancel_at_period_end
         if old_user_sub_stripe_id:
             cancel_subscription(old_user_sub_stripe_id, reason=f"user updated subscription to {sub.name}")
         
@@ -80,7 +80,10 @@ def handle_subscription_updated(sub_data):
         user_email = user.email
         plan_name = sub.name
         
-        send_greating_updated_plan.delay(username, user_email, plan_name)
+        if not cancel_at_period_end:
+            send_greating_updated_plan.delay(username, user_email, plan_name)
+        else:
+            send_cancellation_email.delay(username, user_email) 
         
         logger.info(f"subscription.updated: stripe_id={stripe_id} status={user_sub_obj.status}")
     except User.DoesNotExist:
@@ -124,7 +127,26 @@ def handle_subscription_deleted(sub_data):
         return
 
 def handle_payment_failed(invoice_data):
-    ...
+    customer_id = invoice_data.get('customer')
+    if not customer_id:
+        logger.warning("payment.failed: missing customer_id or subscription_id in event data")
+        return
+    
+    try:
+        user = User.objects.get(customer__stripe_id=customer_id)
+        
+        username = user.username
+        user_email = user.email
+        
+        logger.info(f"Payment failed for user: {username}")
+        
+        send_payment_failed_email.delay(
+            username=username,
+            user_email=user_email
+        )
+        
+    except User.DoesNotExist:
+        logger.warning(f"payment.failed: user not found: {customer_id}")
 
 def handle_payment_succeeded(invoice_data):
     ...

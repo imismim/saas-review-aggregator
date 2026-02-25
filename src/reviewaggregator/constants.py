@@ -13,3 +13,9 @@ CANCEL_EMAIL_SUBJECT = "Your Review Aggregator Subscription was Canceled"
 CANCEL_EMAIL_MESSAGE = lambda username: f"""Hi {username},\n\nWe're sorry to see you go. Your Review Aggregator subscription has been canceled. 
                                     \n\nIf you have any feedback or if there's anything we can do to improve our service, please let us know. 
                                     \n\nWe hope to see you back in the future!\n\n— The Review Aggregator Team"""
+                                    
+PAYMENT_FAILED_SUBJECT = "Payment Failed for Your Review Aggregator Subscription"
+PAYMENT_FAILED_MESSAGE = lambda username: f"""Hi {username},\n\nWe wanted to let you know that there was an issue processing the payment for your Review Aggregator subscription. 
+                                    \n\nPlease log in to your account and update your payment information to avoid any interruption in service. 
+                                    \n\nIf you have any questions or need assistance, feel free to reach out to our support team.
+                                    \n\n— The Review Aggregator Team"""
