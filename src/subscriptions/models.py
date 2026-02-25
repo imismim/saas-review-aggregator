@@ -223,6 +223,11 @@ class UserSubscription(models.Model):
     cancel_at_period_end = models.BooleanField(default=False)
     status = models.CharField(max_length=20, default=SubscriptionStatus.ACTIVE, choices=SubscriptionStatus.choices)
     
+    cancel_at = models.DateTimeField(auto_now=False, auto_now_add=False,
+                                              null=True, blank=True) 
+    canceled_at = models.DateTimeField(auto_now=False, auto_now_add=False,
+                                              null=True, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)
     
