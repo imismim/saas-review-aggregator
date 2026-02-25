@@ -94,7 +94,7 @@ TEMPLATES = [
     },
 ]
 
-SITE_ID = 1
+SITE_ID = config('SITE_ID', default=1, cast=int)
 
 ACCOUNT_LOGIN_METHODS = {'username', 'email'}
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
