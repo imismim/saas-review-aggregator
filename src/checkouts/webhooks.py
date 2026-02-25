@@ -9,6 +9,7 @@ import json
 
 from subscriptions.models import UserSubscription, Subscription
 from helpers.billing import serialize_subscription_data_from_webhook
+from .tasks import send_greating_updated_plan
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -73,6 +74,11 @@ def handle_subscription_updated(sub_data):
             **user_sub_data
         }
     )
+    username = user.username
+    user_email = user.email
+    plan_name = sub.name
+    
+    send_greating_updated_plan.delay(username, user_email, plan_name)
     
     logger.info(f"subscription.updated: stripe_id={stripe_id} status={user_sub_obj.status}")
 
