@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 import json
 
 from subscriptions.models import UserSubscription, Subscription
-from helpers.billing import serialize_subscription_data_from_webhook
+from helpers.billing import serialize_subscription_data_from_webhook, cancel_subscription
 from .tasks import send_greating_updated_plan, send_cancellation_email
 
 logger = logging.getLogger(__name__)
@@ -63,6 +63,8 @@ def handle_subscription_updated(sub_data):
         product_id = user_sub_data.get('product_id')
 
         sub = Subscription.objects.get(stripe_id=product_id)
+        old_user_sub_stripe_id = UserSubscription.objects.get(user=user).stripe_id
+        
         user_sub_obj, _ = UserSubscription.objects.update_or_create(
             user=user,
             defaults={
@@ -70,6 +72,10 @@ def handle_subscription_updated(sub_data):
                 **user_sub_data
             }
         )
+        
+        if old_user_sub_stripe_id:
+            cancel_subscription(old_user_sub_stripe_id, reason=f"user updated subscription to {sub.name}")
+        
         username = user.username
         user_email = user.email
         plan_name = sub.name
