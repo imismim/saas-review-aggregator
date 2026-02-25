@@ -300,3 +300,5 @@ LOGGING = {
         'level': 'DEBUG' if DEBUG else 'INFO',
     },
 }
+
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
