@@ -24,9 +24,6 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('users/', include('users.urls')),
     path('subscriptions/', include('subscriptions.urls')),
-
-    path('checkout/sub_prices/<int:price_id>/', checkout_views.product_price_redirect_view, name='sub-price-checkout'),
-    path('checkout/start/', checkout_views.checkout_redirect_view, name='stripe-checkout-start'),
-    path('checkout/success/', checkout_views.checkout_finalize_view, name='stripe-checkout-end'),
+    path('checkouts/', include('checkouts.urls'), name='stripe-checkout-start'),
 ]
 

@@ -4,15 +4,17 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.conf import settings
 import logging
+import stripe
 
-from subscriptions.models import SubscriptionPrice, Subscription, UserSubscription
+from subscriptions.models import SubscriptionPrice, Subscription
 from helpers.billing import (start_checkout_session,
-                             get_checkout_customer_plan,
-                             get_subscription,
-                             cancel_subscription)
+                             get_checkout_customer_plan)
+from . import webhooks
 
-from checkouts.tasks import send_greating_updated_plan
 # Create your views here.
 
 User = get_user_model()
@@ -30,9 +32,8 @@ def checkout_redirect_view(request):
         'checkout_subscription_price_id')
     try:
         obj = SubscriptionPrice.objects.get(id=subscription_price_id)
-    except:
-        obj = None
-    if subscription_price_id is None or obj is None:
+    except SubscriptionPrice.DoesNotExist as e:
+        logger.error(f"SubscriptionPrice not found for id: {subscription_price_id}")
         return redirect('pricing')
 
     customer_stripe_id = request.user.customer.stripe_id
@@ -51,59 +52,70 @@ def checkout_redirect_view(request):
 @login_required
 def checkout_finalize_view(request):
     session_id = request.GET.get("session_id")
+    
     if session_id is None:
         logger.warning(f"Session id not found in request. {request.GET}")
         return redirect('pricing')
     
     checkout_data = get_checkout_customer_plan(session_id=session_id)
-
-    customer_id = checkout_data.pop("customer_id")
     plan_id = checkout_data.pop("plan_id")
-    sub_stripe_id = checkout_data.pop("sub_stripe_id")
-    subscription_data = {**checkout_data}
+
 
     try:
         sub_obj = Subscription.objects.get(
             subscriptionprice__stripe_id=plan_id)
-        user_obj = User.objects.get(customer__stripe_id=customer_id)
     except Subscription.DoesNotExist:
         logger.error(f"Subscription not found for plan_id: {plan_id}")
-        return HttpResponse("Required data not found.")
-    except User.DoesNotExist:
-        logger.error(f"User not found for customer_id: {customer_id}")
-        return HttpResponse("Required data not found.")
-
-    user_sub_qs = UserSubscription.objects.filter(user=user_obj)
-    old_stripe_id = None
-    if user_sub_qs.exists():
-        old_stripe_id = user_sub_qs.first().stripe_id
-
-    UserSubscription.objects.update_or_create(user=user_obj,
-                                              defaults={'subscription': sub_obj,
-                                                        'stripe_id': sub_stripe_id,
-                                                        'user_cancelled': False,
-                                                        **subscription_data})
-
-    if old_stripe_id and old_stripe_id != sub_stripe_id:
-        old_sub_response = get_subscription(stripe_id=old_stripe_id, raw=False)
-        old_sub_status = old_sub_response.get("status")
-        try:
-            if old_sub_status in ["active", "trialing"]:
-                cancel_subscription(stripe_id=old_stripe_id,
-                                    reason="update_subscription", raw=False)
-                logger.info(f"Cancelled old subscription: {old_stripe_id}")
-        except Exception as e:
-            logger.error(f"Failed to cancel old subscription: {e}")
-            return HttpResponse("Could not cancel old subscription. Please contact support.")
+        return redirect('pricing')
+                                              
+    
+    logger.info(f"Checkout complete for user: {request.user.username} plan: {sub_obj.name}")
 
     context = {
         "subscription": sub_obj,
     }
-
-    send_greating_updated_plan.delay(username=user_obj.username,
-                                     user_email=user_obj.email,
-                                     plan_name=sub_obj.name)
     
-    logger.info(f"Checkout complete for user: {user_obj.username} plan: {sub_obj.name}")
-
     return render(request, 'checkouts/success.html', context=context)
+
+
+@csrf_exempt
+@require_POST
+def stripe_webhook_view(request):
+    logger.info("Received Stripe webhook")
+    payload = request.body
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
+    webhook_secret = settings.STRIPE_WEBHOOK_SECRET
+
+    if not sig_header:
+        logger.warning("Missing Stripe-Signature header")
+        return HttpResponse(status=400)
+
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+    except ValueError as e:
+        logger.error(f"Invalid payload: {e}")
+        return HttpResponse(status=400)
+    except stripe.error.SignatureVerificationError as e:
+        logger.error(f"Invalid signature: {e}")
+        return HttpResponse(status=400)
+
+    event_type = event.get('type')
+    event_data = event['data']['object']
+    logger.info(f"Stripe webhook: {event_type}")
+
+    handlers = {
+        'customer.subscription.created': webhooks.handle_subscription_created,
+        'customer.subscription.updated': webhooks.handle_subscription_updated,
+        'customer.subscription.deleted': webhooks.handle_subscription_deleted,
+        'invoice.payment_failed': webhooks.handle_payment_failed,
+        'invoice.payment_succeeded': webhooks.handle_payment_succeeded,
+        'customer.subscription.trial_ending': webhooks.handle_trial_ending,
+    }
+
+    handler = handlers.get(event_type)
+    if handler:
+        handler(event_data)
+    else:
+        logger.debug(f"Unhandled event: {event_type}")
+
+    return HttpResponse(status=200)

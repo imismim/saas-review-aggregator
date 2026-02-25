@@ -14,16 +14,40 @@ stripe.api_key = STRIPE_SECRET_KEY
 
 def serialize_subscription_data(sub_response):
     status = sub_response.get("status")
-    
+    stripe_id = sub_response.get("id")
     current_period_start = timestamp_to_datetime(sub_response.get("current_period_start"))
     current_period_end = timestamp_to_datetime(sub_response.get("current_period_end"))
     cancel_at_period_end = sub_response.get("cancel_at_period_end", False)
     
     return {
+        'stripe_id': stripe_id,
         'current_period_start': current_period_start,
         'current_period_end': current_period_end,
         'status': status,
         'cancel_at_period_end': cancel_at_period_end
+    }
+
+def serialize_subscription_data_from_webhook(sub_response):
+    stripe_id = sub_response.get('id')
+    status = sub_response.get('status')
+    cancel_at_period_end = sub_response.get('cancel_at_period_end', False)
+    cancel_at = timestamp_to_datetime(sub_response.get('cancel_at'))
+    canceled_at = timestamp_to_datetime(sub_response.get('canceled_at'))
+    
+    item = sub_response.get('items', {}).get('data', [{}])[0]
+    current_period_start = timestamp_to_datetime(item.get('current_period_start'))
+    current_period_end = timestamp_to_datetime(item.get('current_period_end'))
+    product_id = item.get('price', {}).get('product')
+    
+    return {
+        'product_id': product_id,
+        'stripe_id': stripe_id,
+        'status': status,
+        'current_period_start': current_period_start,
+        'current_period_end': current_period_end,
+        'cancel_at_period_end': cancel_at_period_end,
+        'cancel_at': cancel_at,
+        'canceled_at': canceled_at,
     }
 
 def create_customer(name="", email="", metadata={}, raw=False):
@@ -113,13 +137,10 @@ def get_checkout_customer_plan(session_id=""):
     sub_plan = sub_response.get("plan", {})
     plan_id = sub_plan.get("id")
     
-    subscription_data = serialize_subscription_data(sub_response)
- 
     data ={
         "customer_id": customer_id,
         "plan_id": plan_id,
         "sub_stripe_id": sub_stripe_id,
-        **subscription_data
     }
     return data
  
