@@ -29,7 +29,7 @@ class Restaurant(models.Model):
     
     tripadvisor_url = models.URLField(null=True, blank=True)
     
-    slug = models.SlugField(max_length=100, default='')
+    slug = models.SlugField(max_length=100, null=True, blank=True)
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
