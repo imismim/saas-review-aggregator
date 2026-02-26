@@ -214,6 +214,7 @@ class UserSubscription(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     subscription = models.ForeignKey(Subscription, on_delete=models.SET_NULL, null=True, blank=True)
     active = models.BooleanField(default=True)
+    previous_stripe_id = models.CharField(max_length=100, null=True, blank=True)
     stripe_id = models.CharField(max_length=100, null=True, blank=True) 
     user_cancelled = models.BooleanField(default=False)
     current_period_start = models.DateTimeField(auto_now=False, auto_now_add=False,

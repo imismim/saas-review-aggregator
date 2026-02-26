@@ -25,18 +25,21 @@ def handle_subscription_created(sub_data):
     
     try:
         user = User.objects.get(customer__stripe_id=customer_id)
-    
-        user_sub_data = serialize_subscription_data_from_webhook(sub_data)
+        
+        user_sub_data = serialize_subscription_data_from_webhook(sub_data)   
+          
         product_id = user_sub_data.get('product_id')
-    
         sub = Subscription.objects.get(stripe_id=product_id)
-        _, created = UserSubscription.objects.update_or_create(
-            user=user,
-            defaults={
-                "subscription": sub,
-                **user_sub_data,
-            }
-        )
+        
+        user_sub_obj, created = UserSubscription.objects.get_or_create(user=user)
+        user_sub_obj.previous_stripe_id = user_sub_obj.stripe_id
+        
+        for k, v in user_sub_data.items():
+            if hasattr(user_sub_obj, k):
+                setattr(user_sub_obj, k, v) 
+                
+        user_sub_obj.subscription = sub
+        user_sub_obj.save()
         
         logger.info(f"subscription.created: {stripe_id} user={user.username} created={created}")
     except User.DoesNotExist:
@@ -60,25 +63,24 @@ def handle_subscription_updated(sub_data):
         user = User.objects.get(customer__stripe_id=customer_id)
         
         user_sub_data = serialize_subscription_data_from_webhook(sub_data)
-        product_id = user_sub_data.get('product_id')
-
-        sub = Subscription.objects.get(stripe_id=product_id)
-        old_user_sub_stripe_id = UserSubscription.objects.get(user=user).stripe_id
+        user_sub_obj = UserSubscription.objects.get(user=user)
         
-        user_sub_obj, _ = UserSubscription.objects.update_or_create(
-            user=user,
-            defaults={
-                "subscription": sub,    
-                **user_sub_data
-            }
-        )
+        for k, v in user_sub_data.items():
+            if hasattr(user_sub_obj, k):
+                setattr(user_sub_obj, k, v)
+        user_sub_obj.save()
+        
         cancel_at_period_end = user_sub_obj.cancel_at_period_end
-        if old_user_sub_stripe_id:
-            cancel_subscription(old_user_sub_stripe_id, reason=f"user updated subscription to {sub.name}")
+        previous_stripe_id = user_sub_obj.previous_stripe_id
+        status = user_sub_obj.status
         
         username = user.username
         user_email = user.email
-        plan_name = sub.name
+        plan_name = user_sub_obj.subscription.name
+        
+        if previous_stripe_id and status == SubscriptionStatus.ACTIVE:
+            cancel_subscription(previous_stripe_id, reason=f"user updated subscription to {plan_name}")
+        
         
         if not cancel_at_period_end:
             send_greating_updated_plan.delay(username, user_email, plan_name)
@@ -89,39 +91,41 @@ def handle_subscription_updated(sub_data):
     except User.DoesNotExist:
         logger.warning(f"subscription.updated: user not found for customer: {customer_id}")
         return
-    except Subscription.DoesNotExist:
-        logger.warning(f"subscription.updated: subscription not found for product_id: {product_id}")
+    except UserSubscription.DoesNotExist:
+        logger.warning(f"subscription.updated: user subscription not found for user: {user.username}")
         return
-    
-    
 
     
 
 def handle_subscription_deleted(sub_data):
     stripe_id = sub_data.get('id')
+    cancellation_details = sub_data.get('cancellation_details', {})
+    cancellation_comment = cancellation_details.get('comment')
     
     if not stripe_id:
         logger.warning("subscription.deleted: no stripe_id in event data")
         return
     
     try:
-        user_sub_data = serialize_subscription_data_from_webhook(sub_data)
-        user_sub = UserSubscription.objects.get(stripe_id=stripe_id)
-        
-        for k, v in user_sub_data.items():
-            if hasattr(user_sub, k):
-                setattr(user_sub, k, v)
-        user_sub.save()
-        
-        logger.info(f"subscription.deleted: {stripe_id}")
-        
-        username = user_sub.user.username
-        user_email = user_sub.user.email
-        if not user_sub.cancel_at_period_end:
+        if not cancellation_comment and 'user updated subscription' not in cancellation_comment:
+            user_sub_data = serialize_subscription_data_from_webhook(sub_data)
+            user_sub = UserSubscription.objects.get(stripe_id=stripe_id)
+            
+            for k, v in user_sub_data.items():
+                if hasattr(user_sub, k):
+                    setattr(user_sub, k, v)
+            user_sub.save()
+            
+            logger.info(f"subscription.deleted: {stripe_id}")
+            
+            username = user_sub.user.username
+            user_email = user_sub.user.email
+            
             send_cancellation_email.delay(
                 username=username,
                 user_email=user_email
             )
+            
     except UserSubscription.DoesNotExist:
         logger.warning(f"subscription.deleted: not found {stripe_id}")
         return
