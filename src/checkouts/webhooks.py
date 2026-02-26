@@ -117,11 +117,11 @@ def handle_subscription_deleted(sub_data):
         
         username = user_sub.user.username
         user_email = user_sub.user.email
-        
-        send_cancellation_email.delay(
-            username=username,
-            user_email=user_email
-        )
+        if not user_sub.cancel_at_period_end:
+            send_cancellation_email.delay(
+                username=username,
+                user_email=user_email
+            )
     except UserSubscription.DoesNotExist:
         logger.warning(f"subscription.deleted: not found {stripe_id}")
         return
