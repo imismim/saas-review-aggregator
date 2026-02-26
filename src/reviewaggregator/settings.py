@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'subscriptions.apps.SubscriptionsConfig',
     'customers.apps.CustomersConfig',
     'checkouts.apps.CheckoutsConfig',
+    'restaurants.apps.RestaurantsConfig',
 ]
 
 MIDDLEWARE = [
