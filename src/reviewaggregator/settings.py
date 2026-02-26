@@ -219,9 +219,6 @@ EMAIL_USE_SSL = config('EMAIL_USE_SSL', cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 
-STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default=None)
-
-
 # Django messages framework settings
 MESSAGE_TAGS = {
     messages.DEBUG: 'secondary',
@@ -293,6 +290,16 @@ LOGGING = {
             'level': 'WARNING',
             'propagate': False,
         },
+        'celery': {
+            'handlers': ['console'],
+            'level': 'INFO', 
+            'propagate': False,
+        },
+        'celery.task': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
     },
     
     'root': {
@@ -300,5 +307,10 @@ LOGGING = {
         'level': 'DEBUG' if DEBUG else 'INFO',
     },
 }
+
+# Stripe settings
+STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default=None)
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default=None)
+
 
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'

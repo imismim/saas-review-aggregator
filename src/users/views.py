@@ -5,7 +5,6 @@ from django.shortcuts import redirect
 from django.urls import reverse
 
 from subscriptions.models import UserSubscription
-from helpers.billing import get_subscription
 from subscriptions.utils import refresh_active_users_subscriptions
 # Create your views here.
 
@@ -22,15 +21,6 @@ class ProfileView(LoginRequiredMixin, TemplateView):
         context['sub_data'] = user_subscriptions.serialize() if user_subscriptions.stripe_id else None
         return context
     
-    def post(self, request, *args, **kwargs):
-        user_id = request.user.id
-        is_success = refresh_active_users_subscriptions(user_ids=user_id)
-        if is_success:
-            message.success(request, "Subscription refreshed successfully.")
-        else:
-            message.error(request, "Failed to refresh subscription.")
-            
-        return redirect('profile')
 
 profile_view = ProfileView.as_view()
 
