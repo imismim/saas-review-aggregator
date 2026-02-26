@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Platform, Restaurant, Review
+from .models import Platform, Restaurant, Review, Cuisine
 
 # Register your models here.
 
@@ -23,3 +23,9 @@ class ReviewAdmin(admin.ModelAdmin):
     search_fields = ('restaurant__name', 'author')
     list_filter = ('source', 'restaurant')
     ordering = ('-review_date',)
+    
+@admin.register(Cuisine)
+class CuisineAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    search_fields = ('name',)
+    ordering = ('-created_at',)
