@@ -15,8 +15,12 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link {% if url_name == 'pricing' or url_name == 'pricing-interval' %}active{% endif %}"
+                    <a class="nav-link active"
                         href="{% url 'pricing' %}">Pricing</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active"
+                        href="{% url 'restaurants-list' %}">Restaurants</a>
                 </li>
             </ul>
 
