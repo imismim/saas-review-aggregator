@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 
-from .models import Subscription, UserSubscription, SubscriptionPrice
+from .models import Subscription, UserSubscription, SubscriptionPrice, AIModel
 # Register your models here.
 
 class SubscriptionPriceInline(admin.TabularInline):
@@ -57,3 +57,9 @@ class UserSubscriptionAdmin(admin.ModelAdmin):
     
     view_user_link.short_description = 'User Profile'
     view_subscription_link.short_description = 'Subscription'
+
+
+@admin.register(AIModel)
+class AIModelAdmin(admin.ModelAdmin):
+    list_display = ('name', 'is_active', 'api_key_env')
+    search_fields = ('name',)

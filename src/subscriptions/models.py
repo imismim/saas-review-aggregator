@@ -4,6 +4,7 @@ from django.contrib.auth.models import Group, Permission
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
+from decouple import config
 
 from helpers.billing import create_product, create_price
 # Create your models here.
@@ -15,6 +16,24 @@ SUBSCRIPTION_LEVELS = [
     ('pro', 'Pro permissions'),
 ]
 
+class AIModel(models.Model):
+    name = models.CharField(max_length=100)      
+    api_key_env = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True, editable=False)
+    updated_at = models.DateTimeField(auto_now=True, editable=False)
+    
+    def __str__(self):
+        return self.name
+    class Meta:
+        verbose_name = 'AI Model'
+        verbose_name_plural = 'AI Models'
+        
+    @property
+    def api_key(self):
+        return config(self.api_key_env, default=None)
+    
 class Subscription(models.Model):
     name = models.CharField(max_length=100)
     active = models.BooleanField(default=True)
@@ -27,6 +46,8 @@ class Subscription(models.Model):
     
     order = models.IntegerField(default=-1)
     featured = models.BooleanField(default=True)
+    
+    ai_models = models.ManyToManyField(AIModel, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)    
