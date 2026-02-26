@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils.text import slugify
 from decouple import config
 
 class Platform(models.Model):
@@ -15,7 +16,7 @@ class Platform(models.Model):
 class Restaurant(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='restaurants')
     
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     address = models.CharField(max_length=200, null=True, blank=True)
     phone_number = models.CharField(max_length=20, null=True, blank=True)
     cuisine_type = models.CharField(max_length=50, null=True, blank=True)
@@ -28,6 +29,7 @@ class Restaurant(models.Model):
     
     tripadvisor_url = models.URLField(null=True, blank=True)
     
+    slug = models.SlugField(max_length=100, default='')
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -35,6 +37,10 @@ class Restaurant(models.Model):
     def __str__(self):
         return f"{self.name} - {self.city}"
     
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+        
     class Meta:
         ordering = ['-created_at']
         
