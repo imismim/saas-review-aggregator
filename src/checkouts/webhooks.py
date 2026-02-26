@@ -10,7 +10,7 @@ import json
 from subscriptions.models import UserSubscription, Subscription, SubscriptionStatus
 from helpers.billing import serialize_subscription_data_from_webhook, cancel_subscription
 from .tasks import send_greating_updated_plan, send_cancellation_email, send_payment_failed_email
-
+from restaurants.models import Restaurant
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
@@ -28,7 +28,7 @@ def handle_subscription_created(sub_data):
         
         user_sub_data = serialize_subscription_data_from_webhook(sub_data)   
           
-        product_id = user_sub_data.get('product_id')
+        product_id = user_sub_data.pop('product_id')
         sub = Subscription.objects.get(stripe_id=product_id)
         
         user_sub_obj, created = UserSubscription.objects.get_or_create(user=user)
@@ -64,10 +64,14 @@ def handle_subscription_updated(sub_data):
         
         user_sub_data = serialize_subscription_data_from_webhook(sub_data)
         user_sub_obj = UserSubscription.objects.get(user=user)
+        product_id = user_sub_data.pop('product_id')
+        
+        sub = Subscription.objects.get(stripe_id=product_id)
         
         for k, v in user_sub_data.items():
             if hasattr(user_sub_obj, k):
                 setattr(user_sub_obj, k, v)
+        user_sub_obj.subscription = sub
         user_sub_obj.save()
         
         cancel_at_period_end = user_sub_obj.cancel_at_period_end
@@ -76,7 +80,7 @@ def handle_subscription_updated(sub_data):
         
         username = user.username
         user_email = user.email
-        plan_name = user_sub_obj.subscription.name
+        plan_name = sub.name
         
         if previous_stripe_id and status == SubscriptionStatus.ACTIVE:
             cancel_subscription(previous_stripe_id, reason=f"user updated subscription to {plan_name}")
@@ -125,6 +129,8 @@ def handle_subscription_deleted(sub_data):
                 username=username,
                 user_email=user_email
             )
+            Restaurant.objects.filter(user=user_sub.user, active=True).update(active=False)
+            
             
     except UserSubscription.DoesNotExist:
         logger.warning(f"subscription.deleted: not found {stripe_id}")
