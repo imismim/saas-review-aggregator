@@ -104,12 +104,9 @@ def stripe_webhook_view(request):
     logger.info(f"Stripe webhook: {event_type}")
 
     handlers = {
-        'customer.subscription.created': webhooks.handle_subscription_created,
         'customer.subscription.updated': webhooks.handle_subscription_updated,
         'customer.subscription.deleted': webhooks.handle_subscription_deleted,
         'invoice.payment_failed': webhooks.handle_payment_failed,
-        'invoice.payment_succeeded': webhooks.handle_payment_succeeded,
-        'customer.subscription.trial_ending': webhooks.handle_trial_ending,
     }
 
     handler = handlers.get(event_type)
