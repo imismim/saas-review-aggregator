@@ -15,7 +15,9 @@ User = get_user_model()
 def handle_subscription_updated(sub_data):
     stripe_id = sub_data.get('id')
     customer_id = sub_data.get('customer')
-    
+    metadata = sub_data.get('metadata', {})
+    selected_restaurant_ids = metadata.get('selected_restaurant_ids', '')
+    print(f"selected_restaurant_ids: {selected_restaurant_ids}")
     if not stripe_id:
         logger.warning("subscription.updated: no stripe_id in event data")
         return
@@ -37,7 +39,13 @@ def handle_subscription_updated(sub_data):
                     setattr(user_sub_obj, k, v)
             user_sub_obj.subscription = sub
             user_sub_obj.save()
-            Restaurant.objects.filter(user=user).update(active=True)
+            if selected_restaurant_ids != '':
+                lst_selected_restaurant_ids = list(map(int, selected_restaurant_ids.split(',')))
+                print(f"lst_selected_restaurant_ids: {lst_selected_restaurant_ids}")
+                Restaurant.objects.filter(user=user).exclude(id__in=lst_selected_restaurant_ids).delete()
+                Restaurant.objects.filter(user=user).update(active=True)
+            else:
+                Restaurant.objects.filter(user=user).update(active=True)
         
         logger.info(f"status user: {user_sub_obj.status}")
         cancel_at_period_end = user_sub_obj.cancel_at_period_end

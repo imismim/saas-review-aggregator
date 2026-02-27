@@ -7,4 +7,6 @@ urlpatterns = [
     path('start/', checkout_views.checkout_redirect_view, name='stripe-checkout-start'),
     path('success/', checkout_views.checkout_finalize_view, name='stripe-checkout-end'),
     path('webhooks/', checkout_views.stripe_webhook_view, name='stripe-webhook'),
+    path('select-active-restaurant/<int:price_id>/', checkout_views.select_active_restaurant_view, name='select-active-restaurant'),
+
 ]
