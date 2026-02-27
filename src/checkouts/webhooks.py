@@ -1,16 +1,12 @@
-import stripe
 import logging
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
-from django.http import HttpResponse
-from django.conf import settings
 from django.contrib.auth import get_user_model
-import json
+from django.db import transaction
 
-from subscriptions.models import UserSubscription, Subscription, SubscriptionStatus
+from subscriptions.models import UserSubscription, Subscription
 from helpers.billing import serialize_subscription_data_from_webhook, cancel_subscription
 from .tasks import send_greating_updated_plan, send_cancellation_email, send_payment_failed_email
 from restaurants.models import Restaurant
+
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
@@ -35,11 +31,13 @@ def handle_subscription_updated(sub_data):
         
         sub = Subscription.objects.get(stripe_id=product_id)
         logger.info(f"user_sub_data {user_sub_data}")
-        for k, v in user_sub_data.items():
-            if hasattr(user_sub_obj, k):
-                setattr(user_sub_obj, k, v)
-        user_sub_obj.subscription = sub
-        user_sub_obj.save()
+        with transaction.atomic():
+            for k, v in user_sub_data.items():
+                if hasattr(user_sub_obj, k):
+                    setattr(user_sub_obj, k, v)
+            user_sub_obj.subscription = sub
+            user_sub_obj.save()
+            Restaurant.objects.filter(user=user).update(active=True)
         
         logger.info(f"status user: {user_sub_obj.status}")
         cancel_at_period_end = user_sub_obj.cancel_at_period_end
@@ -90,15 +88,19 @@ def handle_subscription_deleted(sub_data):
         else:
             user_sub_data = serialize_subscription_data_from_webhook(sub_data)
             user_sub = UserSubscription.objects.get(stripe_id=stripe_id)
+            user = user_sub.user
+            
             
             username = user_sub.user.username
             user_email = user_sub.user.email
-        
-            for k, v in user_sub_data.items():
-                if hasattr(user_sub, k):
-                    setattr(user_sub, k, v)
-            user_sub.save()
             
+            with transaction.atomic():
+                for k, v in user_sub_data.items():
+                    if hasattr(user_sub, k):
+                        setattr(user_sub, k, v)
+                user_sub.save()
+                Restaurant.objects.filter(user=user).update(active=False)
+                
             send_cancellation_email.delay(
                 username=username,
                 user_email=user_email
