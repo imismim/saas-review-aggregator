@@ -1,7 +1,10 @@
+from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
-
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect
 from .models import Restaurant
 from .form import RestaurantForm
 from .mixions import SubscriptionRequiredMixin, RestaurantLimitMixin
@@ -68,7 +71,17 @@ class RestaurantDeleteView(LoginRequiredMixin,
     messages_text_no_sub = "You need an active subscription to delete a restaurant."
     messages_text_no_user_sub = "You need to subscribe to delete a restaurant."
     messages_text_inactive_sub = "Your subscription is not active. Please subscribe to delete a restaurant."
-    
+
+class RestaurantActiveTogglefView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        active = request.POST.get('status')
+        
+        restaurant = get_object_or_404(Restaurant, user=request.user, pk=pk)
+        restaurant.active = active == 'True'
+        restaurant.save(update_fields=['active'])
+        
+        return redirect('restaurant-detail', slug=restaurant.slug)
 
 
 restaurant_list = RestaurantListView.as_view()
@@ -76,3 +89,4 @@ restaurant_detail = RestaurantDetailView.as_view()
 restaurant_add = RestaurantCreateView.as_view()
 restaurant_edit = RestaurantUpdateView.as_view()
 restaurant_delete = RestaurantDeleteView.as_view()
+restaurant_active_toggle = RestaurantActiveTogglefView.as_view()
