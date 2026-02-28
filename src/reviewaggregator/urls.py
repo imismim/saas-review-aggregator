@@ -25,5 +25,6 @@ urlpatterns = [
     path('users/', include('users.urls')),
     path('subscriptions/', include('subscriptions.urls')),
     path('checkouts/', include('checkouts.urls'), name='stripe-checkout-start'),
+    path('restaurants/', include('restaurants.urls')),
 ]
 

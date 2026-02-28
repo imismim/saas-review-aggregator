@@ -29,12 +29,6 @@ class CancelSubscriptionView(LoginRequiredMixin, View):
                     raw=False
                 )
                 
-                for k, v in sub_data.items():
-                    if hasattr(user_sub_obj, k):
-                        setattr(user_sub_obj, k, v)
-                
-                user_sub_obj.save()
-                
                 messages.success(
                     request, 
                     "Your subscription cancellation request has been processed. "

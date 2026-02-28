@@ -14,13 +14,14 @@
                     <h2 class="fw-bold text-dark">Join ReviewPulse</h2>
                     <p class="text-muted small">Start tracking your restaurant reputation today</p>
                 </div>
-
+                {% if socialaccount_providers.google %}
                 <div class="d-grid gap-2 mb-4">
                     <a href="{% provider_login_url 'google' %}" class="btn btn-outline-dark btn-lg d-flex align-items-center justify-content-center gap-2 shadow-sm py-2">
                         <img src="{% static 'google-icon-logo.svg' %}" style="width: 18px;" alt="Google">
                         <span class="fs-6 fw-semibold">Sign up with Google</span>
                     </a>
                 </div>
+                {% endif %}
 
                 <div class="d-flex align-items-center my-4">
                     <hr class="flex-grow-1">
