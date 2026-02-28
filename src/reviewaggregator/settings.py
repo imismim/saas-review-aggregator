@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "slippers",
 
     # Local apps
+    'core.apps.CoreConfig',
     'scrapers.apps.ScrapersConfig',
     'users.apps.UsersConfig',
     'subscriptions.apps.SubscriptionsConfig',
