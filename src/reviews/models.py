@@ -5,11 +5,11 @@ from restaurants.models import Restaurant
     
 class Review(models.Model):
     class Source(models.TextChoices):
-        GOOGLE = 'Google', 'Google'
-        YELP = 'Yelp', 'Yelp'
-        TRIPADVISOR = 'TripAdvisor', 'TripAdvisor'
-        FACEBOOK = 'Facebook', 'Facebook'
-        OTHER = 'Other', 'Other'
+        GOOGLE = 'google', 'Google'
+        YELP = 'yelp', 'Yelp'
+        TRIPADVISOR = 'tripadvisor', 'TripAdvisor'
+        FACEBOOK = 'facebook', 'Facebook'
+        OTHER = 'other', 'Other'
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='reviews')
     
     source = models.CharField(max_length=100, default=Source.GOOGLE, choices=Source.choices)
