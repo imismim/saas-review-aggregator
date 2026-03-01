@@ -10,19 +10,23 @@
     <div class="d-flex justify-content-between align-items-start mb-3">
         <div>
             <h2 class="mb-1">{{ restaurant.name }}</h2>
-            {% with cuisines=restaurant.cuisine_type.all %}
-            {% if cuisines %}
+            {% if restaurant.types %}
             <p class="text-muted small mb-2">
-                <i class="bi bi-tag me-1"></i>{% for c in cuisines %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                <i class="bi bi-tag me-1"></i>
+                {% for type in restaurant.get_list_types %}
+                    <span class="badge bg-light text-dark border me-1">{{ type.strip }}</span>
+                {% endfor %}
             </p>
             {% endif %}
-            {% endwith %}
+            {% if restaurant.business_status %}
+            <span class="badge bg-warning text-dark small">{{ restaurant.business_status }}</span>
+            {% endif %}
         </div>
         <div class="d-flex align-items-center gap-2">
             <form action="{% url 'restaurant-active-toggle' restaurant.id %}" method="post">
                 {% csrf_token %}
                 <input type="hidden" name="status" value="{% if restaurant.active %}False{% else %}True{% endif %}">
-                <button type="submit" name='status' 
+                <button type="submit" name='status'
                 value="{% if restaurant.active %}False{% else %}True{% endif %}"
                 class="btn btn-sm border-0">
                     {% if restaurant.active %}
@@ -32,26 +36,37 @@
                     {% endif %}
                 </button>
             </form>
-            <a href="{% url 'restaurant-edit' restaurant.slug %}" class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-pencil me-1"></i>Edit
-            </a>
             <a href="{% url 'restaurant-delete' restaurant.slug %}" class="btn btn-outline-danger btn-sm">
                 <i class="bi bi-trash me-1"></i>Delete
             </a>
         </div>
     </div>
 
-    {% if restaurant.description %}
-    <p class="text-muted mb-3">{{ restaurant.description }}</p>
+    <!-- Rating & Price -->
+    {% if restaurant.rating or restaurant.price_level or restaurant.user_ratings_total %}
+    <div class="d-flex align-items-center gap-3 mb-3">
+        {% if restaurant.rating %}
+        <span>
+            <i class="bi bi-star-fill text-warning me-1"></i>
+            <strong>{{ restaurant.rating }}</strong>
+        </span>
+        {% endif %}
+        {% if restaurant.user_ratings_total %}
+        <span class="text-muted small">({{ restaurant.user_ratings_total }} reviews)</span>
+        {% endif %}
+        {% if restaurant.price_level %}
+        <span class="text-muted">
+            {% for i in "1234" %}{% if forloop.counter <= restaurant.price_level %}<strong>$</strong>{% else %}<span class="text-light">$</span>{% endif %}{% endfor %}
+        </span>
+        {% endif %}
+    </div>
     {% endif %}
 
-    <ul class="list-unstyled small mb-1">
-        {% if restaurant.address or restaurant.city or restaurant.country %}
+    <!-- Contact & Links -->
+    <ul class="list-unstyled small mb-3">
+        {% if restaurant.address %}
         <li class="mb-2">
-            <i class="bi bi-geo-alt text-secondary me-2"></i>
-            {% if restaurant.address %}{{ restaurant.address }}{% endif %}
-            {% if restaurant.city %}, {{ restaurant.city }}{% endif %}
-            {% if restaurant.country %}, {{ restaurant.country }}{% endif %}
+            <i class="bi bi-geo-alt text-secondary me-2"></i>{{ restaurant.address }}
         </li>
         {% endif %}
 
@@ -60,15 +75,6 @@
             <i class="bi bi-telephone text-secondary me-2"></i>
             <a href="tel:{{ restaurant.phone_number }}" class="text-decoration-none text-dark">
                 {{ restaurant.phone_number }}
-            </a>
-        </li>
-        {% endif %}
-
-        {% if restaurant.email %}
-        <li class="mb-2">
-            <i class="bi bi-envelope text-secondary me-2"></i>
-            <a href="mailto:{{ restaurant.email }}" class="text-decoration-none text-dark">
-                {{ restaurant.email }}
             </a>
         </li>
         {% endif %}
@@ -82,15 +88,36 @@
         </li>
         {% endif %}
 
-        {% if restaurant.tripadvisor_url %}
+        {% if restaurant.google_maps_url %}
         <li class="mb-2">
-            <i class="bi bi-star text-secondary me-2"></i>
-            <a href="{{ restaurant.tripadvisor_url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
-                TripAdvisor
+            <i class="bi bi-map text-secondary me-2"></i>
+            <a href="{{ restaurant.google_maps_url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+                View on Google Maps
             </a>
         </li>
         {% endif %}
     </ul>
+
+    <!-- Attributes -->
+    <div class="mb-3">
+        <h6 class="text-muted mb-2">Attributes</h6>
+        <div class="d-flex flex-wrap gap-2">
+            {% if restaurant.delivery %}<span class="badge bg-light text-dark border"><i class="bi bi-bicycle me-1"></i>Delivery</span>{% endif %}
+            {% if restaurant.takeout %}<span class="badge bg-light text-dark border"><i class="bi bi-bag me-1"></i>Takeout</span>{% endif %}
+            {% if restaurant.dine_in %}<span class="badge bg-light text-dark border"><i class="bi bi-house me-1"></i>Dine-in</span>{% endif %}
+            {% if restaurant.reservable %}<span class="badge bg-light text-dark border"><i class="bi bi-calendar-check me-1"></i>Reservations</span>{% endif %}
+            {% if restaurant.serves_breakfast %}<span class="badge bg-light text-dark border">Breakfast</span>{% endif %}
+            {% if restaurant.serves_lunch %}<span class="badge bg-light text-dark border">Lunch</span>{% endif %}
+            {% if restaurant.serves_dinner %}<span class="badge bg-light text-dark border">Dinner</span>{% endif %}
+            {% if restaurant.serves_beer %}<span class="badge bg-light text-dark border">Beer</span>{% endif %}
+            {% if restaurant.serves_wine %}<span class="badge bg-light text-dark border">Wine</span>{% endif %}
+            {% if restaurant.serves_vegetarian_food %}<span class="badge bg-light text-dark border"><i class="bi bi-flower1 me-1"></i>Vegetarian</span>{% endif %}
+            {% if restaurant.wheelchair_accessible_entrance %}<span class="badge bg-light text-dark border"><i class="bi bi-person-wheelchair me-1"></i>Wheelchair Accessible</span>{% endif %}
+        </div>
+        {% if not restaurant.delivery and not restaurant.takeout and not restaurant.dine_in and not restaurant.reservable and not restaurant.serves_breakfast and not restaurant.serves_lunch and not restaurant.serves_dinner and not restaurant.serves_beer and not restaurant.serves_wine and not restaurant.serves_vegetarian_food and not restaurant.wheelchair_accessible_entrance %}
+        <span class="text-muted small">No attributes available.</span>
+        {% endif %}
+    </div>
 
     <small class="text-muted">Added {{ restaurant.created_at|date:"M d, Y" }}</small>
 

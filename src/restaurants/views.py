@@ -91,7 +91,7 @@ class RestaurantAddFromGoogleView(LoginRequiredMixin, SubscriptionRequiredMixin,
         else:
             messages.success(request, f"{restaurant_obj.name} added successfully!")
             
-        return HttpResponse(status=201)  
+        return redirect('restaurant-detail', slug=restaurant_obj.slug)
 
         
     

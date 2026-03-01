@@ -46,6 +46,10 @@ class Restaurant(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    def get_list_types(self):
+        if self.types:
+            return [t.strip() for t in self.types.split(',')]
+        return []
     def __str__(self):
         return f"{self.name}"
     
