@@ -55,7 +55,7 @@ class RestaurantActiveTogglefView(LoginRequiredMixin, View):
         
         return redirect('restaurant-detail', slug=restaurant.slug)
 
-class SearchRestaurant(LoginRequiredMixin, TemplateView):
+class SearchRestaurant(LoginRequiredMixin,SubscriptionRequiredMixin, TemplateView):
     template_name = 'restaurants/restaurant_search.html'
 
 
