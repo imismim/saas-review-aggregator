@@ -58,12 +58,12 @@ INSTALLED_APPS = [
 
     # Local apps
     'core.apps.CoreConfig',
-    'scrapers.apps.ScrapersConfig',
     'users.apps.UsersConfig',
     'subscriptions.apps.SubscriptionsConfig',
     'customers.apps.CustomersConfig',
     'checkouts.apps.CheckoutsConfig',
     'restaurants.apps.RestaurantsConfig',
+    'reviews.apps.ReviewsConfig',
 ]
 
 MIDDLEWARE = [
