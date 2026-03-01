@@ -317,3 +317,6 @@ STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default=None)
 
 
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
+
+# Google Places API Key
+GOOGLE_PLACES_API_KEY = config('GOOGLE_PLACES_API_KEY', default=None)
