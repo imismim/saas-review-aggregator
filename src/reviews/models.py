@@ -13,7 +13,7 @@ class Review(models.Model):
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='reviews')
     
     source = models.CharField(max_length=100, default=Source.GOOGLE, choices=Source.choices)
-
+    external_id = models.CharField(max_length=255, null=True, blank=True)
     author = models.CharField(max_length=100, null=True, blank=True)
     rating = models.DecimalField(max_digits=3, decimal_places=1, null=True, blank=True)
     text = models.TextField(null=True, blank=True)
