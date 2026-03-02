@@ -2,7 +2,9 @@ from helpers.billing import (get_customer_list_subscriptions,
                              cancel_subscription, 
                              get_subscription)
 from customers.models import Customer
-from subscriptions.models import UserSubscription, Subscription
+from subscriptions.models import UserSubscription, Subscription, SubscriptionPrice, SUBSCRIPTION_LEVELS
+from django.contrib.auth.models import Group, Permission
+from django.db import transaction
 
 def get_self(self=None):
     out = self.stdout.write if self else print 
@@ -87,3 +89,47 @@ def sync_permissions(self=None):
             group.permissions.set(perms) 
         
     out(style_success('Successfully synced subscriptions'))
+    
+
+def get_or_create_free_subscription():
+    name = SUBSCRIPTION_LEVELS[0][0].capitalize()
+    permssion_name = SUBSCRIPTION_LEVELS[0][1]
+    
+    with transaction.atomic():
+        free_sub, created = Subscription.objects.get_or_create(name=name)
+        
+        if created:
+            group, _ = Group.objects.get_or_create(name=name.capitalize())
+            permissions = Permission.objects.filter(codename__in=[permssion_name])
+            
+            free_sub.stripe_price_id = None
+            free_sub.max_count_restaurant = 1
+            free_sub.max_count_review = 5
+            free_sub.request_to_celery = 0
+            free_sub.save()
+            
+            free_sub.groups.set([group])
+            group.permissions.set(permissions)
+            
+            SubscriptionPrice.objects.create(
+                subscription=free_sub,
+                price=0,
+                order=1,
+            )
+            SubscriptionPrice.objects.create(
+                subscription=free_sub,
+                interval=SubscriptionPrice.IntervalChoices.YEARLY,
+                price=0,
+                order=1,
+            )
+    
+    return free_sub 
+
+def set_free_subscription_for_user(user):
+    free_sub = get_or_create_free_subscription()
+    user_sub_obj, created = UserSubscription.objects.get_or_create(user=user)
+    if created:
+        user_sub_obj.subscription = free_sub
+        user_sub_obj.save()
+        return True
+    return False

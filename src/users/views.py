@@ -16,7 +16,7 @@ class ProfileView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        user_subscriptions, created = UserSubscription.objects.get_or_create(user=user)
+        user_subscriptions = UserSubscription.objects.get(user=user)
 
         context['sub_data'] = user_subscriptions.serialize() if user_subscriptions.stripe_id else None
         return context

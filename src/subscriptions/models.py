@@ -11,6 +11,7 @@ from helpers.billing import create_product, create_price
 
 User = settings.AUTH_USER_MODEL
 SUBSCRIPTION_LEVELS = [
+    ('free', 'Free permissions'),
     ('basic', 'Basic permissions'),
     ('advanced', 'Advanced permissions'),
     ('pro', 'Pro permissions'),
@@ -70,7 +71,9 @@ class Subscription(models.Model):
         return [] 
 
     def save(self, *args, **kwargs):
-        if not self.stripe_id:
+        not_stripe_id = not self.stripe_id
+        not_free_product = self.name != 'Free'
+        if not_stripe_id and not_free_product:
             stripe_id = create_product(
                 name=self.name, 
                 metadata={
@@ -132,7 +135,10 @@ class SubscriptionPrice(models.Model):
         return reverse('sub-price-checkout', kwargs={'price_id': self.id})
     
     def save(self, *args, **kwargs):
-        if not self.stripe_id and self.product_stripe_id is not None:
+        not_stripe_id = not self.stripe_id
+        stripe_product_id = self.product_stripe_id is not None
+        not_free_product = self.subscription.name != 'Free'
+        if not_stripe_id and stripe_product_id and not_free_product:
             stripe_id = create_price(
                 currency=self.stripe_curruncy,
                 unit_amount=self.stripe_price,

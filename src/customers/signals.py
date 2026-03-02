@@ -4,6 +4,7 @@ from allauth.account.signals import (
 )
 from django.dispatch import receiver
 from .models import Customer
+from subscriptions.utils import set_free_subscription_for_user
 
 @receiver(user_signed_up)
 def user_signed_up_handler(sender, request, user, *args, **kwargs):
@@ -21,6 +22,7 @@ def user_signed_up_handler(sender, request, user, *args, **kwargs):
         init_email=email,
         init_email_confirmed=is_verified
     )
+    set_free_subscription_for_user(user=user)
 
 @receiver(email_confirmed)
 def email_confirmed_handler(sender, request, email_address, *args, **kwargs):
