@@ -1,8 +1,8 @@
 {% with is_popular=counter|default:0 %}
 <div class="col">
-    <div class="card h-100 shadow-sm {% if counter == 2 %}border-primary border-2{% else %}border{% endif %} position-relative">
+    <div class="card h-100 shadow-sm {% if counter == 3 %}border-primary border-2{% else %}border{% endif %} position-relative">
 
-        {% if counter == 2 %}
+        {% if counter == 3 %}
         <div class="position-absolute top-0 start-50 translate-middle">
             <span class="badge bg-primary px-3 py-2 rounded-pill shadow-sm">
                 <i class="bi bi-star-fill me-1"></i> Most Popular
@@ -10,7 +10,7 @@
         </div>
         {% endif %}
 
-        <div class="card-header text-center {% if counter == 2 %}bg-primary text-white{% else %}bg-light{% endif %} py-3 border-0">
+        <div class="card-header text-center {% if counter == 3 %}bg-primary text-white{% else %}bg-light{% endif %} py-3 border-0">
             <h5 class="fw-bold mb-0">{{ object.display_subscribtion_name|title }}</h5>
         </div>
 
@@ -40,8 +40,8 @@
 
             <!-- CTA -->
             <a href="{% url 'sub-price-checkout' object.id %}"
-                class="btn btn-lg w-100 {% if counter == 2 %}btn-primary{% else %}btn-outline-primary{% endif %} fw-semibold">
-                {% if counter == 2 %}
+                class="btn btn-lg w-100 {% if counter == 3 %}btn-primary{% else %}btn-outline-primary{% endif %} fw-semibold">
+                {% if counter == 3 %}
                     <i class="bi bi-rocket-takeoff-fill me-1"></i> Get Started
                 {% else %}
                     Choose Plan
