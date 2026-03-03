@@ -125,11 +125,18 @@ def get_or_create_free_subscription():
     
     return free_sub 
 
-def set_free_subscription_for_user(user):
+def set_free_subscription_for_user(user=None, user_sub=None, force=False):
     free_sub = get_or_create_free_subscription()
-    user_sub_obj, created = UserSubscription.objects.get_or_create(user=user)
-    if created:
-        user_sub_obj.subscription = free_sub
-        user_sub_obj.save()
-        return True
+    with transaction.atomic():
+        user_sub_obj, created = UserSubscription.objects.get_or_create(user=user) if not user_sub else (user_sub, False)
+        if created or force:
+            user_sub_obj.subscription = free_sub
+            if force:
+                user_sub_obj.cancel_at_period_end = False
+                user_sub_obj.stripe_id = None
+                user_sub_obj.current_period_start = None
+                user_sub_obj.current_period_end = None
+            user_sub_obj.save()
+            return True
+        
     return False

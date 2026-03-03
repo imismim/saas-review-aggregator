@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.utils import timezone
 
 from .models import Restaurant
-from .mixions import SubscriptionRequiredMixin, RestaurantLimitMixin
+from .mixions import SubscriptionRequiredMixin, RestaurantLimitMixin, RestaurantLimitActiveMixin
 from helpers.google_seach import search_restaurants, get_restaurant_details
 import logging
 
@@ -53,7 +53,7 @@ class RestaurantDeleteView(LoginRequiredMixin,
     def get_queryset(self):
         return Restaurant.objects.filter(user=self.request.user)
     
-class RestaurantActiveTogglefView(LoginRequiredMixin, View):
+class RestaurantActiveTogglefView(LoginRequiredMixin, RestaurantLimitMixin, RestaurantLimitActiveMixin, View):
     def post(self, request, *args, **kwargs):
         pk = self.kwargs.get('pk')
         active = request.POST.get('status')
@@ -82,7 +82,7 @@ class RestaurantSearchAPIView(LoginRequiredMixin, View):
             logger.error(f"Google Places search error: {e}")
             return JsonResponse({'error': str(e)}, status=500)
     
-class RestaurantAddFromGoogleView(LoginRequiredMixin, SubscriptionRequiredMixin, RestaurantLimitMixin, View):
+class RestaurantAddFromGoogleView(LoginRequiredMixin, SubscriptionRequiredMixin, RestaurantLimitMixin, RestaurantLimitActiveMixin, View):
     def post(self, request, *args, **kwargs):
         place_id = request.POST.get('place_id')
         
