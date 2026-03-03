@@ -46,13 +46,16 @@ class RestaurantDetailView(LoginRequiredMixin,
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        reviews_qs = Review.objects.filter(
-            restaurant=self.object
-        )
+        if self.object.active:
+            reviews_qs = Review.objects.filter(
+                restaurant=self.object
+            )
+            
+            paginator = Paginator(reviews_qs, 20)
+            page_number = self.request.GET.get('page')
+            context['reviews_page'] = paginator.get_page(page_number)
         
-        paginator = Paginator(reviews_qs, 20)
-        page_number = self.request.GET.get('page')
-        context['reviews_page'] = paginator.get_page(page_number)
+        context['reviews_count'] = self.object.reviews.count()
         return context
 
 class RestaurantDeleteView(LoginRequiredMixin,
