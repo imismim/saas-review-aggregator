@@ -130,6 +130,45 @@
         </h4>
     </div>
 
+    {% if restaurant.active %}
+    <form method="get" class="row g-2 align-items-end mb-3">
+        <div class="col-auto">
+            <label for="filterRating" class="form-label small mb-1">Rating</label>
+            <select name="rating" id="filterRating" class="form-select form-select-sm">
+                <option value="">All</option>
+                {% for r in "12345" %}
+                <option value="{{ r }}" {% if current_rating == r %}selected{% endif %}>{{ r }} ★</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <label for="filterDateFrom" class="form-label small mb-1">From</label>
+            <input type="date" name="date_from" id="filterDateFrom" class="form-control form-control-sm"
+                   value="{{ current_date_from }}">
+        </div>
+        <div class="col-auto">
+            <label for="filterDateTo" class="form-label small mb-1">To</label>
+            <input type="date" name="date_to" id="filterDateTo" class="form-control form-control-sm"
+                   value="{{ current_date_to }}">
+        </div>
+        <div class="col-auto">
+            <label for="filterSort" class="form-label small mb-1">Sort</label>
+            <select name="sort" id="filterSort" class="form-select form-select-sm">
+                <option value="-review_date" {% if current_sort == "-review_date" %}selected{% endif %}>Date (newest)</option>
+                <option value="review_date" {% if current_sort == "review_date" %}selected{% endif %}>Date (oldest)</option>
+                <option value="-rating" {% if current_sort == "-rating" %}selected{% endif %}>Rating (high)</option>
+                <option value="rating" {% if current_sort == "rating" %}selected{% endif %}>Rating (low)</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+            {% if current_rating or current_date_from or current_date_to %}
+            <a href="?" class="btn btn-sm btn-outline-secondary ms-1">Clear</a>
+            {% endif %}
+        </div>
+    </form>
+    {% endif %}
+
     {% if reviews_page %}
         {% for review in reviews_page %}
         <div class="card shadow-sm mb-3">
@@ -169,7 +208,7 @@
             <ul class="pagination justify-content-center">
                 {% if reviews_page.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ reviews_page.previous_page_number }}">&laquo; Previous</a>
+                    <a class="page-link" href="?{% if filter_params %}{{ filter_params }}&{% endif %}page={{ reviews_page.previous_page_number }}">&laquo; Previous</a>
                 </li>
                 {% else %}
                 <li class="page-item disabled">
@@ -181,13 +220,13 @@
                     {% if reviews_page.number == num %}
                     <li class="page-item active"><span class="page-link">{{ num }}</span></li>
                     {% elif num >= reviews_page.number|add:"-2" and num <= reviews_page.number|add:"2" %}
-                    <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    <li class="page-item"><a class="page-link" href="?{% if filter_params %}{{ filter_params }}&{% endif %}page={{ num }}">{{ num }}</a></li>
                     {% endif %}
                 {% endfor %}
 
                 {% if reviews_page.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ reviews_page.next_page_number }}">Next &raquo;</a>
+                    <a class="page-link" href="?{% if filter_params %}{{ filter_params }}&{% endif %}page={{ reviews_page.next_page_number }}">Next &raquo;</a>
                 </li>
                 {% else %}
                 <li class="page-item disabled">

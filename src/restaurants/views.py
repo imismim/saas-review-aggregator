@@ -8,6 +8,7 @@ from django.shortcuts import redirect
 from django.contrib import messages
 from django.utils import timezone
 from django.core.paginator import Paginator
+from urllib.parse import urlencode
 
 from .models import Restaurant
 from .mixions import SubscriptionRequiredMixin, RestaurantLimitMixin, RestaurantLimitActiveMixin
@@ -43,19 +44,48 @@ class RestaurantDetailView(LoginRequiredMixin,
     def get_queryset(self):
         return Restaurant.objects.filter(user=self.request.user)
 
+    def get_filtered_reviews(self, restaurant):
+        reviews_qs = Review.objects.filter(restaurant=restaurant).select_related('restaurant') 
+        
+        rating = self.request.GET.get('rating', '').strip()
+        date_from = self.request.GET.get('date_from', '').strip()
+        date_to = self.request.GET.get('date_to', '').strip()
+        sort = self.request.GET.get('sort', '-review_date')
+        
+        sort_options = {'review_date', '-review_date', 'rating', '-rating'}
+        if sort not in sort_options:
+            sort = '-review_date'
+        
+        if rating:
+            reviews_qs = reviews_qs.filter(rating=rating)
+        if date_from:
+            reviews_qs = reviews_qs.filter(review_date__date__gte=date_from)
+        if date_to:
+            reviews_qs = reviews_qs.filter(review_date__date__lte=date_to)
+        
+        return reviews_qs.order_by(sort), {
+            'rating': rating,
+            'date_from': date_from,
+            'date_to': date_to,
+            'sort': sort,
+        }
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
         if self.object.active:
-            reviews_qs = Review.objects.filter(
-                restaurant=self.object
-            )
+            reviews_qs, filters = self.get_filtered_reviews(self.object)
             
             paginator = Paginator(reviews_qs, 20)
-            page_number = self.request.GET.get('page')
-            context['reviews_page'] = paginator.get_page(page_number)
+            context['reviews_page'] = paginator.get_page(self.request.GET.get('page'))
+            context['reviews_count'] = reviews_qs.count()
+            
+            context['filter_params'] = urlencode({k: v for k, v in filters.items() if v})
+            context['current_rating'] = filters['rating']
+            context['current_date_from'] = filters['date_from']
+            context['current_date_to'] = filters['date_to']
+            context['current_sort'] = filters['sort']
         
-        context['reviews_count'] = self.object.reviews.count()
         return context
 
 class RestaurantDeleteView(LoginRequiredMixin,
