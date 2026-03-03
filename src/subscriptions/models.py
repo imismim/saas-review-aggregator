@@ -51,6 +51,7 @@ class Subscription(models.Model):
     ai_models = models.ManyToManyField(AIModel, blank=True)
     
     max_count_restaurant = models.IntegerField(default=0, help_text="Max number of restaurants that can be added userr with this subscription.")
+    max_count_active_restaurant = models.IntegerField(default=0, help_text="Max number of active restaurants that can be added userr with this subscription.")
     max_count_review = models.IntegerField(default=0, help_text="Max number of reviews that can be scraped with this subscription.")
     requst_to_celery = models.IntegerField(default=0, help_text="Number of requests that can be sent to celery day. 24=every hour, 1=every day, 0=dont sent.")
     
