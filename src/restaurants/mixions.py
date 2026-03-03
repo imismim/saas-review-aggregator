@@ -15,8 +15,8 @@ class SubscriptionRequiredMixin:
         
         try:            
             user_sub = user.usersubscription
-            sub = user_sub.subscription
-            if not sub:
+            self._sub = user_sub.subscription
+            if not self._sub:
                 messages.info(request, self.messages_text_no_user_sub)
                 return redirect('pricing')
         except UserSubscription.DoesNotExist:

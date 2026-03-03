@@ -11,6 +11,8 @@ from django.utils import timezone
 from .models import Restaurant
 from .mixions import SubscriptionRequiredMixin, RestaurantLimitMixin, RestaurantLimitActiveMixin
 from helpers.google_seach import search_restaurants, get_restaurant_details
+from reviews.tasks import scrape_reviews
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -99,6 +101,8 @@ class RestaurantAddFromGoogleView(LoginRequiredMixin, SubscriptionRequiredMixin,
             messages.info(request, f"{restaurant_obj.name} is already in your list.")
         else:
             messages.success(request, f"{restaurant_obj.name} added successfully!")
+            if self._sub.name == 'Free':  
+                scrape_reviews.delay(restaurant_obj.id)
             
         return redirect('restaurant-detail', slug=restaurant_obj.slug)
 
