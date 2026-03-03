@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.core.paginator import Paginator
 from urllib.parse import urlencode
+from django.db.models import Q
 
 from .models import Restaurant
 from .mixions import SubscriptionRequiredMixin, RestaurantLimitMixin, RestaurantLimitActiveMixin
@@ -28,7 +29,19 @@ class RestaurantListView(LoginRequiredMixin,
     paginate_by = 6
 
     def get_queryset(self):
-        return Restaurant.objects.filter(user=self.request.user)
+        qs = Restaurant.objects.filter(user=self.request.user)
+        q = self.request.GET.get('q', '').strip()
+        if q:
+            qs = qs.filter(
+                Q(name__icontains=q) | 
+                Q(address__icontains=q)
+            )  
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['search_query'] = self.request.GET.get('q', '')
+        return context
 
 
 class RestaurantDetailView(LoginRequiredMixin,
