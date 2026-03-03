@@ -26,7 +26,7 @@ class SubscriptionRequiredMixin:
         if not user_sub.is_active_status:
             messages.info(request, self.messages_text_inactive_sub)
             return redirect('pricing')
-        
+    
         return super().dispatch(request, *args, **kwargs)
     
 

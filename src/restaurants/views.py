@@ -7,11 +7,13 @@ from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.utils import timezone
+from django.core.paginator import Paginator
 
 from .models import Restaurant
 from .mixions import SubscriptionRequiredMixin, RestaurantLimitMixin, RestaurantLimitActiveMixin
 from helpers.google_seach import search_restaurants, get_restaurant_details
 from reviews.tasks import scrape_reviews
+from reviews.models import Review
 
 import logging
 
@@ -39,7 +41,19 @@ class RestaurantDetailView(LoginRequiredMixin,
     messages_text_inactive_sub = "Your subscription is not active. Please subscribe to view restaurant details."
 
     def get_queryset(self):
-        return Restaurant.objects.filter(user=self.request.user).prefetch_related('reviews')
+        return Restaurant.objects.filter(user=self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        reviews_qs = Review.objects.filter(
+            restaurant=self.object
+        )
+        
+        paginator = Paginator(reviews_qs, 20)
+        page_number = self.request.GET.get('page')
+        context['reviews_page'] = paginator.get_page(page_number)
+        return context
 
 class RestaurantDeleteView(LoginRequiredMixin,
                            SubscriptionRequiredMixin,
@@ -103,6 +117,9 @@ class RestaurantAddFromGoogleView(LoginRequiredMixin, SubscriptionRequiredMixin,
             messages.success(request, f"{restaurant_obj.name} added successfully!")
             if self._sub.name == 'Free':  
                 scrape_reviews.delay(restaurant_obj.id)
+            else:
+                limit_reviews = self._sub.max_count_review
+                scrape_reviews.delay(restaurant_id=restaurant_obj.id, source_slug='google_full', limit=limit_reviews)
             
         return redirect('restaurant-detail', slug=restaurant_obj.slug)
 

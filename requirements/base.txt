@@ -38,3 +38,6 @@ sentry-sdk
 
 # Google Maps API
 googlemaps
+
+# Google Search API
+google-search-results

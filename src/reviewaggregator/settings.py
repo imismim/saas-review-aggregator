@@ -321,3 +321,6 @@ ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
 
 # Google Places API Key
 GOOGLE_PLACES_API_KEY = config('GOOGLE_PLACES_API_KEY', default=None)
+
+# SerpAPI Key
+SERPAPI_KEY = config('SERPAPI_KEY', default=None)

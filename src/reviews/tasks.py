@@ -8,12 +8,12 @@ from reviews.models import Review
 logger = logging.getLogger(__name__)
 
 @shared_task(bind=True, max_retries=3)
-def scrape_reviews(self, restaurant_id, source_slug=Review.Source.GOOGLE):
+def scrape_reviews(self, restaurant_id, source_slug=Review.Source.GOOGLE, limit=5):
     try:
         restaurant = Restaurant.objects.get(id=restaurant_id)
         
         scraper = ScraperFactory.create(source_slug)
-        count = scraper.scrape_and_save(restaurant)
+        count = scraper.scrape_and_save(restaurant=restaurant, limit=limit)
         
         logger.info(f"Scraped {count} reviews from {source_slug} for {restaurant.name}")
     except ValueError as e:
