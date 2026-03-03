@@ -20,7 +20,8 @@ class RestaurantListView(LoginRequiredMixin,
     model = Restaurant
     template_name = 'restaurants/restaurants_list.html'
     context_object_name = 'restaurants'
-    
+    paginate_by = 6
+
     def get_queryset(self):
         return Restaurant.objects.filter(user=self.request.user)
 
@@ -36,7 +37,7 @@ class RestaurantDetailView(LoginRequiredMixin,
     messages_text_inactive_sub = "Your subscription is not active. Please subscribe to view restaurant details."
 
     def get_queryset(self):
-        return Restaurant.objects.filter(user=self.request.user)
+        return Restaurant.objects.filter(user=self.request.user).prefetch_related('reviews')
 
 class RestaurantDeleteView(LoginRequiredMixin,
                            SubscriptionRequiredMixin,
@@ -50,7 +51,7 @@ class RestaurantDeleteView(LoginRequiredMixin,
     messages_text_inactive_sub = "Your subscription is not active. Please subscribe to delete a restaurant."
 
     def get_queryset(self):
-        return Restaurant.objects.filter(user=self.request.user).prefetch_related('reviews')
+        return Restaurant.objects.filter(user=self.request.user)
     
 class RestaurantActiveTogglefView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
