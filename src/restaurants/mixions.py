@@ -33,6 +33,7 @@ class SubscriptionRequiredMixin:
 class RestaurantLimitMixin:
     
     messages_text_max_count = "You have reached the maximum number of restaurants allowed by your subscription. Please upgrade your subscription to add more restaurants."
+    messages_text_max_active_count = "You have reached the maximum number of active restaurants allowed by your subscription. Please upgrade your subscription to activate more restaurants or deactivate some of your current active restaurants."
     
     def dispatch(self, request, *args, **kwargs):
         user = request.user
@@ -44,9 +45,14 @@ class RestaurantLimitMixin:
         self._max_allowed = sub.max_count_restaurant if sub else 0
         self._max_allowed_active = sub.max_count_active_restaurant if sub else 0
         
+        if self._max_allowed_active <= self._restaurant_active_count:
+            messages.info(request, self.messages_text_max_active_count)
+            return redirect('restaurants-list')
+        
         if self._max_allowed <= self._restaurants_count:
             messages.info(request, self.messages_text_max_count)
             return redirect('restaurants-list')
+        
         
         return super().dispatch(request, *args, **kwargs)
     
