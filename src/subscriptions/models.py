@@ -132,6 +132,10 @@ class SubscriptionPrice(models.Model):
             return None
         return self.subscription.stripe_id
     
+    @property
+    def is_free_plan(self):
+        return self.subscription.name == 'Free' if self.subscription else False
+    
     def get_checkout_url(self):
         return reverse('sub-price-checkout', kwargs={'price_id': self.id})
     

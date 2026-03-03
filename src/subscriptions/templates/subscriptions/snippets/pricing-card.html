@@ -39,6 +39,7 @@
             </ul>
 
             <!-- CTA -->
+            {% if not object.is_free_plan %}
             <a href="{% url 'sub-price-checkout' object.id %}"
                 class="btn btn-lg w-100 {% if counter == 3 %}btn-primary{% else %}btn-outline-primary{% endif %} fw-semibold">
                 {% if counter == 3 %}
@@ -47,6 +48,7 @@
                     Choose Plan
                 {% endif %}
             </a>
+            {% endif %}
         </div>
     </div>
 </div>
