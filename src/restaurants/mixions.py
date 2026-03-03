@@ -40,7 +40,9 @@ class RestaurantLimitMixin:
         sub = user_sub.subscription
         
         self._restaurants_count = Restaurant.objects.filter(user=user).count()
+        self._restaurant_active_count = Restaurant.objects.filter(user=user, active=True).count()
         self._max_allowed = sub.max_count_restaurant if sub else 0
+        self._max_allowed_active = sub.max_count_active_restaurant if sub else 0
         
         if self._max_allowed <= self._restaurants_count:
             messages.info(request, self.messages_text_max_count)
@@ -52,4 +54,5 @@ class RestaurantLimitMixin:
         context = super().get_context_data(**kwargs)
         
         context['is_max_count_restaurants'] = self._max_allowed <= self._restaurants_count
+        context['is_max_count_active_restaurants'] = self._max_allowed_active <= self._restaurant_active_count
         return context

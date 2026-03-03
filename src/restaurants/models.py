@@ -50,4 +50,4 @@ class Restaurant(models.Model):
         
     class Meta:
         unique_together = ('user', 'place_id')
-        ordering = ['active', '-created_at']
+        ordering = ['-active', '-created_at']
