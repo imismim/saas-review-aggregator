@@ -45,7 +45,13 @@ def handle_subscription_updated(sub_data):
                 Restaurant.objects.filter(user=user).exclude(id__in=lst_selected_restaurant_ids).delete()
                 Restaurant.objects.filter(user=user).update(active=True)
             else:
-                Restaurant.objects.filter(user=user).update(active=True)
+                sub = user_sub_obj.subscription
+                restaurants = Restaurant.objects.filter(user=user)
+                if sub.max_count_active_restaurant < restaurants.count():
+                    restaurants_active_ids = restaurants.values_list('id', flat=True)[:sub.max_count_active_restaurant]
+                    Restaurant.objects.filter(user=user).exclude(id__in=restaurants_active_ids).update(active=False)
+                else:
+                    Restaurant.objects.filter(user=user).update(active=True)
         
         logger.info(f"status user: {user_sub_obj.status}")
         cancel_at_period_end = user_sub_obj.cancel_at_period_end
