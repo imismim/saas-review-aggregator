@@ -7,7 +7,7 @@ from reviews.models import Review
 
 logger = logging.getLogger(__name__)
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60, queue='scraping')
+@shared_task(bind=True, max_retries=3, default_retry_delay=60, ignore_result=True, queue='scraping')
 def scrape_reviews(self, restaurant_id, source_slug=Review.Source.GOOGLE, limit=5):
     try:
         restaurant = Restaurant.objects.get(id=restaurant_id)

@@ -1,16 +1,14 @@
 # .github/workflows/heroku_dynos.yml
-name: Heroku Dynos Control
+name: Server Turn On/Off
 
 on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'Turn dynos on or off'
+        description: 'Turn dynos on/off (true/false)'
         required: true
-        type: choice
-        options:
-          - on
-          - off
+        type: boolean
+        default: false
 
 jobs:
   control_dynos:
@@ -24,11 +22,11 @@ jobs:
         run: curl https://cli-assets.heroku.com/install.sh | sh
 
       - name: Turn On Dynos
-        if: ${{ github.event.inputs.action == 'on' }}
+        if: ${{ github.event.inputs.action == 'true' }}
         run: heroku ps:scale web=1 worker=1 scraper=1 --app $APP_NAME
 
       - name: Turn Off Dynos
-        if: ${{ github.event.inputs.action == 'off' }}
+        if: ${{ github.event.inputs.action == 'false' }}
         run: heroku ps:scale web=0 worker=0 scraper=0 --app $APP_NAME
 
       - name: Show Dyno Status

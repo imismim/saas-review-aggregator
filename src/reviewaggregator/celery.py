@@ -16,8 +16,13 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
 if REDIS_URL.startswith('rediss://'):
-    app.conf.broker_use_ssl = {'ssl_cert_reqs': ssl.CERT_NONE}
-    app.conf.redis_backend_use_ssl = {'ssl_cert_reqs': ssl.CERT_NONE}
+    ssl_config ={
+        'ssl_cert_reqs': ssl.CERT_NONE,
+        'ssl_check_hostname': False,
+    }
+    app.conf.broker_use_ssl = ssl_config
+    app.conf.redis_backend_use_ssl = ssl_config
+
     app.conf.broker_transport_options = {
         'visibility_timeout': 3600,
         'socket_timeout': 30,
