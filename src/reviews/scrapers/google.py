@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class GoogleScraper(BaseScraper):
     source = 'google'
     
-    def scrape(self, restaurant):
+    def scrape(self, restaurant, limit=5):
         if not restaurant.place_id:
             logger.warning(f"No google_place_id for {restaurant.name}")
             return []
@@ -36,6 +36,6 @@ class GoogleScraper(BaseScraper):
         
         return reviews
     
-    def scrape_and_save(self, restaurant):
-        reviews = self.scrape(restaurant)
+    def scrape_and_save(self, restaurant, limit=5):
+        reviews = self.scrape(restaurant, limit=limit)
         return self.save_reviews(reviews, restaurant)
