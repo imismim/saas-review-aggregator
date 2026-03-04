@@ -8,7 +8,7 @@ from core import constants as const
 User = get_user_model()
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+@shared_task(bind=True, max_retries=3, default_retry_delay=60, queue='default')
 def send_greating_updated_plan(self, username, user_email, plan_name):
 
     try:
@@ -22,7 +22,7 @@ def send_greating_updated_plan(self, username, user_email, plan_name):
     except Exception as exc:
         raise self.retry(exc=exc)
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+@shared_task(bind=True, max_retries=3, default_retry_delay=60, queue='default')
 def send_cancellation_email(self, username, user_email):
 
     try:
@@ -38,7 +38,7 @@ def send_cancellation_email(self, username, user_email):
     
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def send_payment_failed_email(self, username, user_email):
+def send_payment_failed_email(self, username, user_email, queue='default'):
 
     try:
         send_mail(

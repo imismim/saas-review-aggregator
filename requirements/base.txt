@@ -16,6 +16,7 @@ slippers
 psycopg2-binary
 
 # Task Queue & Background Processing
+kombu
 celery
 redis
 

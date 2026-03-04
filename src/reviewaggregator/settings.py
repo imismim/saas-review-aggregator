@@ -11,15 +11,12 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import os
 import dj_database_url
-from datetime import timedelta
 from decouple import config
 from django.contrib.messages import constants as messages
-from urllib.parse import urlparse
 import sentry_sdk
-import ssl
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
-
+from kombu import Queue
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -212,6 +209,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Celery Settings
 REDIS_URL = config("REDIS_URL", default='redis://localhost:6379/0')
+CELERY_TASK_QUEUES = {
+    Queue('default'),
+    Queue('scraping'),
+}
+
+CELERY_TASK_DEFAULT_QUEUE = 'default'
 
 # Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
