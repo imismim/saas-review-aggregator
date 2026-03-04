@@ -163,9 +163,12 @@ class RestaurantAddFromGoogleView(LoginRequiredMixin, SubscriptionRequiredMixin,
             messages.success(request, f"{restaurant_obj.name} added successfully!")
             if self._sub.name == 'Free':  
                 scrape_reviews.delay(restaurant_obj.id)
+                logger.info(f"Scheduling free review scraping for {restaurant_obj.name} with sub name {self._sub.name}")
+
             else:
                 limit_reviews = self._sub.max_count_review
-                scrape_reviews.delay(restaurant_id=restaurant_obj.id, source_slug='google', limit=limit_reviews)
+                logger.info(f"Scheduling review scraping for {restaurant_obj.name} with limit {limit_reviews}")
+                scrape_reviews.delay(restaurant_id=restaurant_obj.id, source_slug='google_full', limit=limit_reviews)
             
         return redirect('restaurant-detail', slug=restaurant_obj.slug)
 
