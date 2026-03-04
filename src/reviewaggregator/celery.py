@@ -1,12 +1,12 @@
 import os
 import ssl
 from celery import Celery
-from django.conf import settings
+from decouple import config
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'reviewaggregator.settings')
 
 app = Celery('reviewaggregator')
-REDIS_URL = settings.REDIS_URL
+REDIS_URL = config('REDIS_URL', default='redis://redis:6379/0')
 
 app.conf.broker_url = REDIS_URL
 app.conf.result_backend = REDIS_URL
