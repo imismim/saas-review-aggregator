@@ -223,10 +223,10 @@ if REDIS_URL.startswith('rediss://'):
     CELERY_BROKER_USE_SSL = ssl_config
     CELERY_REDIS_BACKEND_USE_SSL = ssl_config
     
-CELERY_TASK_QUEUES = {
+CELERY_TASK_QUEUES = (
     Queue('default'),
     Queue('scraping'),
-}
+)
 CELERY_TASK_DEFAULT_QUEUE = 'default'
 
 # Email settings
