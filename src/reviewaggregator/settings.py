@@ -11,15 +11,12 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import os
 import dj_database_url
-from datetime import timedelta
 from decouple import config
 from django.contrib.messages import constants as messages
-from urllib.parse import urlparse
 import sentry_sdk
-import ssl
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
-
+from kombu import Queue
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -57,12 +54,13 @@ INSTALLED_APPS = [
     "slippers",
 
     # Local apps
-    'scrapers.apps.ScrapersConfig',
+    'core.apps.CoreConfig',
     'users.apps.UsersConfig',
     'subscriptions.apps.SubscriptionsConfig',
     'customers.apps.CustomersConfig',
     'checkouts.apps.CheckoutsConfig',
     'restaurants.apps.RestaurantsConfig',
+    'reviews.apps.ReviewsConfig',
 ]
 
 MIDDLEWARE = [
@@ -211,6 +209,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Celery Settings
 REDIS_URL = config("REDIS_URL", default='redis://localhost:6379/0')
+CELERY_TASK_QUEUES = {
+    Queue('default'),
+    Queue('scraping'),
+}
+
+CELERY_TASK_DEFAULT_QUEUE = 'default'
 
 # Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -220,6 +224,7 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool)
 EMAIL_USE_SSL = config('EMAIL_USE_SSL', cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
 
 # Django messages framework settings
 MESSAGE_TAGS = {
@@ -316,3 +321,9 @@ STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default=None)
 
 
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
+
+# Google Places API Key
+GOOGLE_PLACES_API_KEY = config('GOOGLE_PLACES_API_KEY', default=None)
+
+# SerpAPI Key
+SERPAPI_KEY = config('SERPAPI_KEY', default=None)

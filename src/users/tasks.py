@@ -3,11 +3,11 @@ from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.conf import settings
 
-from reviewaggregator.constants import WELCOME_EMAIL_MESSAGE, WELCOME_EMAIL_SUBJECT
+from core.constants import WELCOME_EMAIL_MESSAGE, WELCOME_EMAIL_SUBJECT
 User = get_user_model()
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+@shared_task(bind=True, max_retries=3, default_retry_delay=60, queue='default')
 def send_welcome_email(self, user_id):
     try:
         user = User.objects.get(pk=user_id)

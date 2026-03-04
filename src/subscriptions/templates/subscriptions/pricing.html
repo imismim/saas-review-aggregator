@@ -34,7 +34,7 @@
 </div>
 
 <!-- Pricing cards -->
-<div class="row row-cols-1 row-cols-md-3 mb-5 g-4 justify-content-center">
+<div class="row row-cols-1 row-cols-md-4 mb-5 g-4 justify-content-center">
     {% for price_object in object_qs %}
         {% include 'subscriptions/snippets/pricing-card.html' with object=price_object counter=forloop.counter total=object_qs.count %}
     {% empty %}

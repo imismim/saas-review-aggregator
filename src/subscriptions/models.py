@@ -11,6 +11,7 @@ from helpers.billing import create_product, create_price
 
 User = settings.AUTH_USER_MODEL
 SUBSCRIPTION_LEVELS = [
+    ('free', 'Free permissions'),
     ('basic', 'Basic permissions'),
     ('advanced', 'Advanced permissions'),
     ('pro', 'Pro permissions'),
@@ -50,6 +51,7 @@ class Subscription(models.Model):
     ai_models = models.ManyToManyField(AIModel, blank=True)
     
     max_count_restaurant = models.IntegerField(default=0, help_text="Max number of restaurants that can be added userr with this subscription.")
+    max_count_active_restaurant = models.IntegerField(default=0, help_text="Max number of active restaurants that can be added userr with this subscription.")
     max_count_review = models.IntegerField(default=0, help_text="Max number of reviews that can be scraped with this subscription.")
     requst_to_celery = models.IntegerField(default=0, help_text="Number of requests that can be sent to celery day. 24=every hour, 1=every day, 0=dont sent.")
     
@@ -70,7 +72,9 @@ class Subscription(models.Model):
         return [] 
 
     def save(self, *args, **kwargs):
-        if not self.stripe_id:
+        not_stripe_id = not self.stripe_id
+        not_free_product = self.name != 'Free'
+        if not_stripe_id and not_free_product:
             stripe_id = create_product(
                 name=self.name, 
                 metadata={
@@ -128,11 +132,18 @@ class SubscriptionPrice(models.Model):
             return None
         return self.subscription.stripe_id
     
+    @property
+    def is_free_plan(self):
+        return self.subscription.name == 'Free' if self.subscription else False
+    
     def get_checkout_url(self):
         return reverse('sub-price-checkout', kwargs={'price_id': self.id})
     
     def save(self, *args, **kwargs):
-        if not self.stripe_id and self.product_stripe_id is not None:
+        not_stripe_id = not self.stripe_id
+        stripe_product_id = self.product_stripe_id is not None
+        not_free_product = self.subscription.name != 'Free'
+        if not_stripe_id and stripe_product_id and not_free_product:
             stripe_id = create_price(
                 currency=self.stripe_curruncy,
                 unit_amount=self.stripe_price,

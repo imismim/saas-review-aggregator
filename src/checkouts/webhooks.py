@@ -6,7 +6,7 @@ from subscriptions.models import UserSubscription, Subscription
 from helpers.billing import serialize_subscription_data_from_webhook, cancel_subscription
 from .tasks import send_greating_updated_plan, send_cancellation_email, send_payment_failed_email
 from restaurants.models import Restaurant
-
+from subscriptions.utils import set_free_subscription_for_user
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
@@ -45,7 +45,13 @@ def handle_subscription_updated(sub_data):
                 Restaurant.objects.filter(user=user).exclude(id__in=lst_selected_restaurant_ids).delete()
                 Restaurant.objects.filter(user=user).update(active=True)
             else:
-                Restaurant.objects.filter(user=user).update(active=True)
+                sub = user_sub_obj.subscription
+                restaurants = Restaurant.objects.filter(user=user)
+                if sub.max_count_active_restaurant < restaurants.count():
+                    restaurants_active_ids = restaurants.values_list('id', flat=True)[:sub.max_count_active_restaurant]
+                    Restaurant.objects.filter(user=user).exclude(id__in=restaurants_active_ids).update(active=False)
+                else:
+                    Restaurant.objects.filter(user=user).update(active=True)
         
         logger.info(f"status user: {user_sub_obj.status}")
         cancel_at_period_end = user_sub_obj.cancel_at_period_end
@@ -94,21 +100,23 @@ def handle_subscription_deleted(sub_data):
             logger.info(f"subscription.deleted: skipping cancellation email for dangling old subscription. stripe_id={stripe_id}")
             return
         else:
-            user_sub_data = serialize_subscription_data_from_webhook(sub_data)
-            user_sub = UserSubscription.objects.get(stripe_id=stripe_id)
-            user = user_sub.user
-            
-            
-            username = user_sub.user.username
-            user_email = user_sub.user.email
-            
             with transaction.atomic():
-                for k, v in user_sub_data.items():
-                    if hasattr(user_sub, k):
-                        setattr(user_sub, k, v)
-                user_sub.save()
-                Restaurant.objects.filter(user=user).update(active=False)
+                user_sub = UserSubscription.objects.get(stripe_id=stripe_id)
+                user = user_sub.user
+                set_free_subscription_for_user(user_sub=user_sub, force=True)
                 
+                last_restaurant = Restaurant.objects.filter(user=user).first()
+
+                if last_restaurant:
+                    Restaurant.objects.filter(
+                        user=user
+                    ).exclude(
+                        pk=last_restaurant.pk
+                    ).update(active=False)
+                    
+                username = user_sub.user.username
+                user_email = user_sub.user.email
+            
             send_cancellation_email.delay(
                 username=username,
                 user_email=user_email

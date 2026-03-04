@@ -31,12 +31,12 @@ services:
     ports:
       - "6379:6379"
   
-  worker:
+  worker-default:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: worker-1
-    command: celery --workdir src -A reviewaggregator worker --loglevel=info
+    container_name: worker-default
+    command: celery --workdir src -A reviewaggregator worker  --loglevel=info -Q default --concurrency=4
     volumes:
       - .:/app
     env_file:
@@ -46,6 +46,23 @@ services:
     environment:
       - CELERY_BROKER_URL=${REDIS_URL}
       - PYTHONPATH=/app/src
+
+  worker-scraping:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: worker-scraping
+    command: celery --workdir src -A reviewaggregator worker  --loglevel=info -Q scraping --concurrency=2
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    environment:
+      - CELERY_BROKER_URL=${REDIS_URL}
+      - PYTHONPATH=/app/src
+      
   web:
     build: 
       context: .

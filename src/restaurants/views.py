@@ -1,19 +1,47 @@
 from django.views import View
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
+from django.contrib import messages
+from django.utils import timezone
+from django.core.paginator import Paginator
+from urllib.parse import urlencode
+from django.db.models import Q
+
 from .models import Restaurant
-from .form import RestaurantForm
-from .mixions import SubscriptionRequiredMixin, RestaurantLimitMixin
+from .mixions import SubscriptionRequiredMixin, RestaurantLimitMixin, RestaurantLimitActiveMixin
+from helpers.google_seach import search_restaurants, get_restaurant_details
+from reviews.tasks import scrape_reviews
+from reviews.models import Review
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 class RestaurantListView(LoginRequiredMixin,
                          ListView):
     model = Restaurant
     template_name = 'restaurants/restaurants_list.html'
     context_object_name = 'restaurants'
+    paginate_by = 6
+
+    def get_queryset(self):
+        qs = Restaurant.objects.filter(user=self.request.user)
+        q = self.request.GET.get('q', '').strip()
+        if q:
+            qs = qs.filter(
+                Q(name__icontains=q) | 
+                Q(address__icontains=q)
+            )  
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['search_query'] = self.request.GET.get('q', '')
+        return context
 
 
 class RestaurantDetailView(LoginRequiredMixin,
@@ -26,40 +54,52 @@ class RestaurantDetailView(LoginRequiredMixin,
     messages_text_no_user_sub = "You need to subscribe to view restaurant details."
     messages_text_inactive_sub = "Your subscription is not active. Please subscribe to view restaurant details."
 
+    def get_queryset(self):
+        return Restaurant.objects.filter(user=self.request.user)
 
-class RestaurantCreateView(LoginRequiredMixin,
-                           SubscriptionRequiredMixin,
-                           RestaurantLimitMixin,
-                           CreateView):
-    model = Restaurant
-    form_class = RestaurantForm
-    template_name = 'restaurants/restaurant_add.html'
-    success_url = reverse_lazy('restaurants-list')
-    
-    messages_text_no_sub = "You need an active subscription to add a restaurant."
-    messages_text_no_user_sub = "You need to subscribe to add a restaurant."
-    messages_text_inactive_sub = "Your subscription is not active. Please subscribe to add a restaurant."
-    messages_text_max_count = "You have reached the maximum number of restaurants allowed by your subscription. Please upgrade your subscription to add more restaurants."
-    
-    def form_valid(self, form):
-        form.instance.user = self.request.user
-        return super().form_valid(form)
+    def get_filtered_reviews(self, restaurant):
+        reviews_qs = Review.objects.filter(restaurant=restaurant).select_related('restaurant') 
+        
+        rating = self.request.GET.get('rating', '').strip()
+        date_from = self.request.GET.get('date_from', '').strip()
+        date_to = self.request.GET.get('date_to', '').strip()
+        sort = self.request.GET.get('sort', '-review_date')
+        
+        sort_options = {'review_date', '-review_date', 'rating', '-rating'}
+        if sort not in sort_options:
+            sort = '-review_date'
+        
+        if rating:
+            reviews_qs = reviews_qs.filter(rating=rating)
+        if date_from:
+            reviews_qs = reviews_qs.filter(review_date__date__gte=date_from)
+        if date_to:
+            reviews_qs = reviews_qs.filter(review_date__date__lte=date_to)
+        
+        return reviews_qs.order_by(sort), {
+            'rating': rating,
+            'date_from': date_from,
+            'date_to': date_to,
+            'sort': sort,
+        }
 
-
-class RestaurantUpdateView(LoginRequiredMixin,
-                           SubscriptionRequiredMixin,
-                           UpdateView):
-    model = Restaurant
-    form_class = RestaurantForm
-    template_name = 'restaurants/restaurant_edit.html'
-    
-    messages_text_no_sub = "You need an active subscription to edit a restaurant."
-    messages_text_no_user_sub = "You need to subscribe to edit a restaurant."
-    messages_text_inactive_sub = "Your subscription is not active. Please subscribe to edit a restaurant."
-    
-    def get_success_url(self):
-        return reverse_lazy('restaurant-detail', kwargs={'slug': self.object.slug})
-
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        if self.object.active:
+            reviews_qs, filters = self.get_filtered_reviews(self.object)
+            
+            paginator = Paginator(reviews_qs, 20)
+            context['reviews_page'] = paginator.get_page(self.request.GET.get('page'))
+            context['reviews_count'] = reviews_qs.count()
+            
+            context['filter_params'] = urlencode({k: v for k, v in filters.items() if v})
+            context['current_rating'] = filters['rating']
+            context['current_date_from'] = filters['date_from']
+            context['current_date_to'] = filters['date_to']
+            context['current_sort'] = filters['sort']
+        
+        return context
 
 class RestaurantDeleteView(LoginRequiredMixin,
                            SubscriptionRequiredMixin,
@@ -72,7 +112,10 @@ class RestaurantDeleteView(LoginRequiredMixin,
     messages_text_no_user_sub = "You need to subscribe to delete a restaurant."
     messages_text_inactive_sub = "Your subscription is not active. Please subscribe to delete a restaurant."
 
-class RestaurantActiveTogglefView(LoginRequiredMixin, View):
+    def get_queryset(self):
+        return Restaurant.objects.filter(user=self.request.user)
+    
+class RestaurantActiveTogglefView(LoginRequiredMixin, RestaurantLimitMixin, RestaurantLimitActiveMixin, View):
     def post(self, request, *args, **kwargs):
         pk = self.kwargs.get('pk')
         active = request.POST.get('status')
@@ -83,10 +126,55 @@ class RestaurantActiveTogglefView(LoginRequiredMixin, View):
         
         return redirect('restaurant-detail', slug=restaurant.slug)
 
+class SearchRestaurant(LoginRequiredMixin,SubscriptionRequiredMixin, TemplateView):
+    template_name = 'restaurants/restaurant_search.html'
 
+
+class RestaurantSearchAPIView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get('q', '').strip()
+        if not query or len(query) < 3:
+            return JsonResponse({'results': []})
+        
+        try:
+            results = search_restaurants(query)
+            print(f"Search results: {results}")
+            return JsonResponse({'results': results})
+        except Exception as e:
+            logger.error(f"Google Places search error: {e}")
+            return JsonResponse({'error': str(e)}, status=500)
+    
+class RestaurantAddFromGoogleView(LoginRequiredMixin, SubscriptionRequiredMixin, RestaurantLimitMixin, RestaurantLimitActiveMixin, View):
+    def post(self, request, *args, **kwargs):
+        place_id = request.POST.get('place_id')
+        
+        if not place_id:
+            messages.error(request, "No place selected.")
+            return redirect('restaurant-search')
+        
+        restaurant_data = get_restaurant_details(place_id)
+        restaurant_obj, created = Restaurant.objects.get_or_create(user=request.user, 
+                                                                   place_id=place_id, 
+                                                                   defaults=restaurant_data)
+        
+        if not created:
+            messages.info(request, f"{restaurant_obj.name} is already in your list.")
+        else:
+            messages.success(request, f"{restaurant_obj.name} added successfully!")
+            if self._sub.name == 'Free':  
+                scrape_reviews.delay(restaurant_obj.id)
+            else:
+                limit_reviews = self._sub.max_count_review
+                scrape_reviews.delay(restaurant_id=restaurant_obj.id, source_slug='google', limit=limit_reviews)
+            
+        return redirect('restaurant-detail', slug=restaurant_obj.slug)
+
+        
+    
 restaurant_list = RestaurantListView.as_view()
 restaurant_detail = RestaurantDetailView.as_view()
-restaurant_add = RestaurantCreateView.as_view()
-restaurant_edit = RestaurantUpdateView.as_view()
 restaurant_delete = RestaurantDeleteView.as_view()
 restaurant_active_toggle = RestaurantActiveTogglefView.as_view()
+restaurant_add_from_google = RestaurantAddFromGoogleView.as_view()
+search_restaurant = SearchRestaurant.as_view()
+restaurant_search_api = RestaurantSearchAPIView.as_view()   

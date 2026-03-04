@@ -16,15 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from checkouts import views as checkout_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('scrapers.urls')),
-    path('accounts/', include('allauth.urls')),
-    path('users/', include('users.urls')),
-    path('subscriptions/', include('subscriptions.urls')),
-    path('checkouts/', include('checkouts.urls'), name='stripe-checkout-start'),
-    path('restaurants/', include('restaurants.urls')),
+    path('', include('core.urls')),
 ]
 

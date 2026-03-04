@@ -3,10 +3,21 @@
 {% block content %}
 <div class="container py-4">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="mb-0">My Restaurants</h2>
-        <span class="text-muted">{{ restaurants|length }} restaurant{{ restaurants|length|pluralize }}</span>
+        <span class="text-muted">{{ page_obj.paginator.count }} restaurant{{ page_obj.paginator.count|pluralize }}</span>
     </div>
+
+    <form method="get" class="mb-4">
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" name="q" class="form-control" placeholder="Search by name or address…" value="{{ search_query }}">
+            {% if search_query %}
+            <a href="?" class="btn btn-outline-secondary">Clear</a>
+            {% endif %}
+            <button type="submit" class="btn btn-primary">Search</button>
+        </div>
+    </form>
 
     {% if restaurants %}
         <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
@@ -102,14 +113,43 @@
             <p class="mt-3 text-muted">You have no restaurants yet. Add your first one!</p>
         </div>
     {% endif %}
-    
-    {% if not is_max_count_restaurants %}
-    <div class="d-flex justify-content-center mt-5">
-        <a href="{% url 'restaurant-add' %}" class="btn btn-primary btn-lg px-5">
-            <i class="bi bi-plus-circle me-2"></i>Add New Restaurant
-        </a>
-    </div>
-    {% endif %}
 
+    {% if page_obj.has_other_pages %}
+    <nav class="mt-4" aria-label="Restaurant pagination">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}">&laquo;</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">&laquo;</span>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}">&raquo;</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">&raquo;</span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
 </div>
 {% endblock content %}
