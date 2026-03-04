@@ -17,6 +17,7 @@ import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
 from kombu import Queue
+import ssl
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -209,11 +210,23 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Celery Settings
 REDIS_URL = config("REDIS_URL", default='redis://localhost:6379/0')
+
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_TASK_IGNORE_RESULT = True
+
+if REDIS_URL.startswith('rediss://'):
+    ssl_config = {
+        'ssl_cert_reqs': ssl.CERT_NONE,
+        'ssl_check_hostname': False,
+    }
+    CELERY_BROKER_USE_SSL = ssl_config
+    CELERY_REDIS_BACKEND_USE_SSL = ssl_config
+    
 CELERY_TASK_QUEUES = {
     Queue('default'),
     Queue('scraping'),
 }
-
 CELERY_TASK_DEFAULT_QUEUE = 'default'
 
 # Email settings
