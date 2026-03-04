@@ -19,16 +19,17 @@ jobs:
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install.sh | sh
 
-      - name: Set Heroku remote
-        run: heroku git:remote -a $APP_NAME
-
       - name: Push to Heroku
         run: |
-          git remote set-url heroku https://heroku:$HEROKU_API_KEY@git.heroku.com/$APP_NAME.git
+          git remote add heroku https://heroku:$HEROKU_API_KEY@git.heroku.com/$APP_NAME.git
           git push heroku ${{ github.ref_name }}:main --force
 
       - name: Run Migrations
-        run: heroku run python src/manage.py migrate --app $APP_NAME
+        run: heroku run --exit-code python src/manage.py migrate --app $APP_NAME
 
       - name: Collect Static Files
-        run: heroku run "python src/manage.py collectstatic --noinput" --app $APP_NAME
+        run: heroku run --exit-code "python src/manage.py collectstatic --noinput" --app $APP_NAME
+
+      - name: Scale Dynos
+        run: |
+          heroku ps:scale web=1 worker=1 scraper=1 --app $APP_NAME
