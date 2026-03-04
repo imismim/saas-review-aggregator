@@ -1,0 +1,35 @@
+# .github/workflows/heroku_dynos.yml
+name: Heroku Dynos Control
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Turn dynos on or off'
+        required: true
+        type: choice
+        options:
+          - on
+          - off
+
+jobs:
+  control_dynos:
+    runs-on: ubuntu-latest
+    env:
+      HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+      APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
+
+    steps:
+      - name: Install Heroku CLI
+        run: curl https://cli-assets.heroku.com/install.sh | sh
+
+      - name: Turn On Dynos
+        if: ${{ github.event.inputs.action == 'on' }}
+        run: heroku ps:scale web=1 worker=1 scraper=1 --app $APP_NAME
+
+      - name: Turn Off Dynos
+        if: ${{ github.event.inputs.action == 'off' }}
+        run: heroku ps:scale web=0 worker=0 scraper=0 --app $APP_NAME
+
+      - name: Show Dyno Status
+        run: heroku ps --app $APP_NAME
