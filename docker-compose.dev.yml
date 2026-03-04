@@ -36,7 +36,7 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     container_name: worker-default
-    command: celery --workdir src -A reviewaggregator worker  --loglevel=info --queues=default --concurrency=4
+    command: celery --workdir src -A reviewaggregator worker  --loglevel=info -Q default --concurrency=4
     volumes:
       - .:/app
     env_file:
@@ -52,7 +52,7 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     container_name: worker-scraping
-    command: celery --workdir src -A reviewaggregator worker  --loglevel=info --queues=default --concurrency=2
+    command: celery --workdir src -A reviewaggregator worker  --loglevel=info -Q scraping --concurrency=2
     volumes:
       - .:/app
     env_file:
