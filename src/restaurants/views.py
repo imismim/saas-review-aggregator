@@ -165,7 +165,7 @@ class RestaurantAddFromGoogleView(LoginRequiredMixin, SubscriptionRequiredMixin,
                 scrape_reviews.delay(restaurant_obj.id)
             else:
                 limit_reviews = self._sub.max_count_review
-                scrape_reviews.delay(restaurant_id=restaurant_obj.id, source_slug='google_full', limit=limit_reviews)
+                scrape_reviews.delay(restaurant_id=restaurant_obj.id, source_slug='google', limit=limit_reviews)
             
         return redirect('restaurant-detail', slug=restaurant_obj.slug)
 
