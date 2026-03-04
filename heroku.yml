@@ -4,6 +4,7 @@ build:
     worker: Dockerfile
     scraper: Dockerfile
 run:
-  web: gunicorn --chdir src reviewaggregator.wsgi:application --bind 0.0.0.0:$PORT
-  worker: celery -A reviewaggregator worker --loglevel=info
-  scraper: celery --workdir src -A reviewaggregator worker -Q scraping --loglevel=info
+run:
+  web: gunicorn --workdir src reviewaggregator.wsgi:application --bind 0.0.0.0:$PORT --workers=2
+  worker: celery --workdir src -A reviewaggregator worker -Q default --loglevel=info --concurrency=1 --max-tasks-per-child=10
+  scraper: celery --workdir src -A reviewaggregator worker -Q scraping --loglevel=info --concurrency=1 --max-tasks-per-child=5
