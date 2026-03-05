@@ -59,6 +59,7 @@ class RestaurantLimitActiveMixin:
 
     def dispatch(self, request, *args, **kwargs):
         status = request.POST.get('status')
+        status = status if status else 'True'
         user = request.user
         user_sub = user.usersubscription
         sub = user_sub.subscription
