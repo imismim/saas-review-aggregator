@@ -132,6 +132,7 @@ class StripeWebhookView(View):
 
         handlers = {
             'customer.subscription.updated': webhooks.handle_subscription_updated,
+            'customer.subscription.created': webhooks.handle_subscription_created,
             'customer.subscription.deleted': webhooks.handle_subscription_deleted,
             'invoice.payment_failed': webhooks.handle_payment_failed,
         }
