@@ -208,21 +208,28 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Celery Settings
-REDIS_URL = config("REDIS_URL", default='redis://localhost:6379/0')
+# Cashe settings
+REDIS_URL = config('REDIS_URL', default='redis://localhost:6379/0')
 
-CELERY_BROKER_URL = REDIS_URL
-CELERY_RESULT_BACKEND = REDIS_URL
-CELERY_TASK_IGNORE_RESULT = True
-
-if REDIS_URL.startswith('rediss://'):
-    ssl_config = {
-        'ssl_cert_reqs': ssl.CERT_NONE,
-        'ssl_check_hostname': False,
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': REDIS_URL,
     }
-    CELERY_BROKER_USE_SSL = ssl_config
-    CELERY_REDIS_BACKEND_USE_SSL = ssl_config
-    
+}
+
+# Celery Settings
+RABBITMQ_URL = config(
+    'CLOUDAMQP_URL',  
+    default=config('RABBITMQ_URL', default='amqp://guest:guest@localhost:5672/')
+)
+CELERY_BROKER_URL = RABBITMQ_URL
+CELERY_RESULT_BACKEND = 'rpc://'  # Use RabbitMQ for results
+
+CELERY_BROKER_CONNECTION_RETRY = True
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  
+CELERY_BROKER_CONNECTION_MAX_RETRIES = 10
+
 CELERY_TASK_QUEUES = (
     Queue('default'),
     Queue('scraping'),
