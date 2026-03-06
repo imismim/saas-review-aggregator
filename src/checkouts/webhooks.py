@@ -15,13 +15,56 @@ User = get_user_model()
 def handle_subscription_updated(sub_data):
     stripe_id = sub_data.get('id')
     customer_id = sub_data.get('customer')
-    metadata = sub_data.get('metadata', {})
-    selected_restaurant_ids = metadata.get('selected_restaurant_ids', '')
-    print(f"selected_restaurant_ids: {selected_restaurant_ids}")
+    
     if not stripe_id:
         logger.warning("subscription.updated: no stripe_id in event data")
         return
     
+    try:
+        user = User.objects.get(customer__stripe_id=customer_id)
+        
+        user_sub_data = serialize_subscription_data_from_webhook(sub_data)
+        product_id = user_sub_data.pop('product_id')
+        
+        user_sub_obj = UserSubscription.objects.get(user=user)
+        
+        sub = Subscription.objects.get(stripe_id=product_id)
+        with transaction.atomic():
+            for k, v in user_sub_data.items():
+                if hasattr(user_sub_obj, k):
+                    setattr(user_sub_obj, k, v)
+            user_sub_obj.subscription = sub
+            user_sub_obj.save()
+        
+        logger.info(f"status user: {user_sub_obj.status}")
+        cancel_at_period_end = user_sub_obj.cancel_at_period_end
+        
+        username = user.username
+        user_email = user.email
+        
+        
+        if cancel_at_period_end:
+            send_cancellation_email.delay(username, user_email) 
+                    
+        logger.info(f"subscription.updated: stripe_id={stripe_id} status={user_sub_obj.status}")
+    except User.DoesNotExist:
+        logger.warning(f"subscription.updated: user not found for customer: {customer_id}")
+        return
+    except UserSubscription.DoesNotExist:
+        logger.warning(f"subscription.updated: user subscription not found for user: {user.username}")
+        return
+
+
+def handle_subscription_created(sub_data):
+    stripe_id = sub_data.get('id')
+    customer_id = sub_data.get('customer')
+    metadata = sub_data.get('metadata', {})
+    selected_restaurant_ids = metadata.get('selected_restaurant_ids', '')
+    logger.info(f"Handling subscription.created for stripe_id={stripe_id}, customer_id={customer_id}, selected_restaurant_ids={selected_restaurant_ids}")
+    
+    if not stripe_id:
+        logger.warning("subscription.created: no stripe_id in event data")
+        return
     try:
         user = User.objects.get(customer__stripe_id=customer_id)
         
@@ -54,20 +97,17 @@ def handle_subscription_updated(sub_data):
                     Restaurant.objects.filter(user=user).update(active=True)
         
         logger.info(f"status user: {user_sub_obj.status}")
-        cancel_at_period_end = user_sub_obj.cancel_at_period_end
         
         username = user.username
         user_email = user.email
         plan_name = sub.name
         
-        if previous_stripe_id and not cancel_at_period_end:
+        if previous_stripe_id:
             logging.info(f"Cancelling previous subscription for user {username} with previous_stripe_id {previous_stripe_id}")
             cancel_subscription(stripe_id=previous_stripe_id, reason=f"user updated subscription to {plan_name}")
         
-        if not cancel_at_period_end:
-            send_greating_updated_plan.delay(username, user_email, plan_name)
-        else:
-            send_cancellation_email.delay(username, user_email) 
+        send_greating_updated_plan.delay(username, user_email, plan_name)
+
         
         logger.info(f"subscription.updated: stripe_id={stripe_id} status={user_sub_obj.status}")
     except User.DoesNotExist:
@@ -76,8 +116,6 @@ def handle_subscription_updated(sub_data):
     except UserSubscription.DoesNotExist:
         logger.warning(f"subscription.updated: user subscription not found for user: {user.username}")
         return
-
-    
 
 def handle_subscription_deleted(sub_data):
     stripe_id = sub_data.get('id')
